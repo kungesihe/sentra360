@@ -65,7 +65,7 @@
     "user": "lerato",
     "url": "/account",
     "title": "Homeowner dashboard",
-    "explain": "Everything at a glance: panic button (for clients), safety alerts, counts of reports, applications, quotations and bookings, and quick actions.",
+    "explain": "Panic button, My protection (each home, business and vehicle with its plan and status, plus one-tap Add a home / vehicle / business with monthly prices), safety alerts and quick actions including WhatsApp the control room.",
     "desktop": "desktop/07-homeowner-dashboard.png",
     "mobile": "mobile/07-homeowner-dashboard.png"
   },
@@ -75,7 +75,7 @@
     "user": "lerato",
     "url": "/account/panic",
     "title": "Panic button",
-    "explain": "Anyone with a complete profile (home address + emergency contact) can hold the big red button for 3 seconds (or tick a box and press Send). It captures GPS where allowed, can be silent, and warns honestly that it needs internet.",
+    "explain": "Anyone with a complete profile (home address + emergency contact) holds the big red button for 3 seconds. Plan members get armed response; everyone gets a WhatsApp call-back from the control room. GPS where allowed, optional silent alert.",
     "desktop": "desktop/08-panic-button.png",
     "mobile": "mobile/08-panic-button.png"
   },
@@ -93,7 +93,7 @@
     "n": 10,
     "section": "Homeowner",
     "user": "lerato",
-    "url": "/account/panic/SOS-261110-NG88",
+    "url": "/account/panic/SOS-261110-LSV3",
     "title": "Panic alert status",
     "explain": "After sending, the client sees each step with times: received by server, shown in the control room, acknowledged, officer dispatched, resolved. Location keeps updating.",
     "desktop": "desktop/10-panic-alert-status.png",
@@ -132,11 +132,11 @@
   {
     "n": 14,
     "section": "Homeowner",
-    "user": "lerato",
+    "user": "sipho",
     "url": "/account/assets/property",
-    "title": "My properties",
-    "explain": "Homeowners register several properties. Each shows whether it is protected and the latest application.",
-    "desktop": "desktop/14-my-properties.png",
+    "title": "Home & business",
+    "explain": "Each home or business shows its plan (Home protection or Business alarm), its status, and a one-tap \"Get protected\" with optional extras.",
+    "desktop": "desktop/14-home-business.png",
     "mobile": null
   },
   {
@@ -144,10 +144,10 @@
     "section": "Homeowner",
     "user": "lerato",
     "url": "/account/assets/property/new",
-    "title": "Register a property and apply",
-    "explain": "Address, GPS, existing security, access and concerns, photos, and the protection services wanted (armed response, monitoring, CCTV…).",
-    "desktop": "desktop/15-register-a-property-and-apply.png",
-    "mobile": "mobile/15-register-a-property-and-apply.png"
+    "title": "Add a home and choose the plan",
+    "explain": "Address, GPS, security details and photos. The matching monthly plan is shown with what it includes; tick to sign up and add optional extras.",
+    "desktop": "desktop/15-add-a-home-and-choose-the-plan.png",
+    "mobile": "mobile/15-add-a-home-and-choose-the-plan.png"
   },
   {
     "n": 16,
@@ -175,7 +175,7 @@
     "user": "sipho",
     "url": "/account/quotations/1",
     "title": "Quotation to accept",
-    "explain": "An itemised quotation with VAT. The customer accepts or declines online. It can be printed or saved as PDF.",
+    "explain": "The plan quotation, pre-priced from the price list (monthly fee + once-off installation). Accept online, then pay by EFT and upload proof of payment.",
     "desktop": "desktop/18-quotation-to-accept.png",
     "mobile": "mobile/18-quotation-to-accept.png"
   },
@@ -235,7 +235,7 @@
     "user": "security",
     "url": "/security",
     "title": "Live control room",
-    "explain": "Active panic alerts and open incidents with a live map, refreshing every 5 seconds, with an optional alarm sound. Acknowledge, open and dispatch, or call.",
+    "explain": "Panic alerts (plan members first) and open incidents on a live map, refreshing every 5 seconds. Acknowledge, WhatsApp call-back, open and dispatch, or call.",
     "desktop": "desktop/24-live-control-room.png",
     "mobile": null
   },
@@ -394,9 +394,9 @@
     "section": "Admin",
     "user": "admin",
     "url": "/admin/payments",
-    "title": "Payments",
-    "explain": "All payments with Excel export. PayFast online payment switches on once merchant keys are added.",
-    "desktop": "desktop/40-payments.png",
+    "title": "Payments & proofs of payment",
+    "explain": "Customers pay by EFT and upload proof of payment. The Admin checks each proof against the bank statement and approves (activating the plan) or rejects it with a reason. All payments export to Excel.",
+    "desktop": "desktop/40-payments-proofs-of-payment.png",
     "mobile": null
   },
   {

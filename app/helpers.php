@@ -95,7 +95,7 @@ function nav_groups(string $portal): array
         'homeowner' => [
             ['/account', 'house', 'Home', []],
             ['/account/incidents', 'megaphone', 'Reports', [['/account/incidents', 'My reports'], ['/account/incidents/new', 'Report an incident']]],
-            ['/account/assets/property', 'shield-check', 'Protection', [['/account/assets/property', 'Properties'], ['/account/assets/vehicle', 'Vehicles'], ['/account/applications', 'Applications']]],
+            ['/account/assets/property', 'shield-check', 'Protection', [['/account/assets/property', 'Home & business'], ['/account/assets/vehicle', 'Vehicles'], ['/account/applications', 'Plan requests']]],
             ['/account/services', 'bag-check', 'Services', [['/account/services', 'Browse'], ['/account/pricelist', 'Price list'], ['/account/requests', 'My bookings'], ['/account/quotations', 'Quotations'], ['/account/payments', 'Payments']]],
             ['/account/profile', 'person', 'Account', [['/account/profile', 'Profile'], ['/account/contacts', 'Emergency contacts'], ['/account/notifications', 'Notifications']]],
         ],
@@ -236,4 +236,17 @@ function area(): array
         ];
     }
     return $a;
+}
+
+/** A South African phone number as WhatsApp wants it (digits only, 27 country code), or null. */
+function wa_number(?string $phone): ?string
+{
+    $d = preg_replace('/\D+/', '', (string) $phone);
+    if ($d === '' || strlen($d) < 9) {
+        return null;
+    }
+    if (str_starts_with($d, '0')) {
+        $d = '27' . substr($d, 1);
+    }
+    return strlen($d) >= 11 ? $d : null;
 }

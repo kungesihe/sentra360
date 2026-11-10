@@ -51,44 +51,52 @@
     </div>
     <div class="col-lg-8">
       <?php
+      $P = App\Services\Plans::class;
       $protected = array_filter($assets, fn($a) => $a['protection_status'] === 'active');
-      $unprotected = array_filter($assets, fn($a) => $a['protection_status'] !== 'active');
       ?>
       <div class="panel protection-card h-100">
-        <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+        <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
           <div class="d-flex gap-3">
             <span class="protection-ico"><i class="bi bi-shield-check"></i></span>
             <div>
-              <h2 class="h5 mb-1">My protection list</h2>
+              <h2 class="h5 mb-1">My protection</h2>
               <p class="small text-body-secondary mb-0">
-                <?php if (!$assets): ?>Add your home and vehicles so <?= e($t['display_name']) ?> knows exactly what to protect. Adding them is free; you decide later whether to take a plan.
-                <?php elseif (!$protected): ?>Nothing on your list is protected yet. Apply for armed response and monitoring, and we'll send you a quotation.
-                <?php else: ?><?= count($protected) ?> of <?= count($assets) ?> protected.<?= $unprotected ? ' Add protection to the rest for full peace of mind.' : ' Everything on your list is covered.' ?>
+                <?php if (!$assets): ?>Pick a monthly plan for your home, car or business. Every plan includes 24/7 armed response and priority call-backs.
+                <?php elseif (!$protected): ?>Nothing is protected yet. Choose a plan below and we'll send your quotation.
+                <?php else: ?><?= count($protected) ?> of <?= count($assets) ?> protected.
                 <?php endif; ?>
-                <?php if ($protectionFrom): ?><br>Home protection from <strong><?= money_exact((int) $protectionFrom['price_cents']) ?></strong> <?= e($protectionFrom['price_unit'] ?? '') ?>.<?php endif; ?>
               </p>
             </div>
           </div>
-          <div class="d-flex flex-wrap gap-2">
-            <a href="/account/assets/property/new" class="btn btn-brand btn-sm"><i class="bi bi-house-add"></i> Add a home</a>
-            <a href="/account/assets/vehicle/new" class="btn btn-outline-dark btn-sm"><i class="bi bi-car-front"></i> Add a vehicle</a>
-            <a href="/account/pricelist" class="btn btn-link btn-sm">Price list</a>
-          </div>
+          <a href="/account/pricelist" class="btn btn-link btn-sm px-0">Prices</a>
         </div>
         <?php if ($assets): ?>
-          <ul class="list-unstyled mb-0 mt-3 border-top pt-2">
+          <ul class="list-unstyled mb-2 mt-3 border-top pt-1">
             <?php foreach ($assets as $a):
+              $type = $P::typeFor($a['kind'], $a);
               $active = $a['protection_status'] === 'active';
               $inProgress = !$active && $a['app_status'] && !in_array($a['app_status'], ['rejected', 'cancelled', 'active'], true); ?>
               <li class="d-flex flex-wrap justify-content-between align-items-center gap-2 py-2 border-bottom">
-                <span><i class="bi bi-<?= $a['kind'] === 'property' ? 'house' : 'car-front' ?> me-1"></i><?= e($a['label']) ?></span>
+                <span><i class="bi bi-<?= e($P::DEFAULTS[$type]['icon']) ?> me-1"></i><?= e($a['label']) ?>
+                  <span class="d-block small text-body-secondary"><?= e($plans[$type]['name'] ?? '') ?></span></span>
                 <?php if ($active): ?><span class="badge text-bg-success"><i class="bi bi-shield-check"></i> Protected</span>
-                <?php elseif ($inProgress): ?><a href="/account/applications" class="badge text-bg-info text-decoration-none">Application: <?= e(App\Services\Ops::label($a['app_status'])) ?></a>
-                <?php else: ?><a href="/account/assets/<?= $a['kind'] ?>" class="btn btn-sm btn-warning">Add protection</a><?php endif; ?>
+                <?php elseif ($inProgress): ?><a href="/account/applications" class="badge text-bg-info text-decoration-none"><?= e(App\Services\Ops::label($a['app_status'])) ?></a>
+                <?php else: ?><a href="/account/assets/<?= $a['kind'] ?>" class="btn btn-sm btn-warning">Get protected</a><?php endif; ?>
               </li>
             <?php endforeach; ?>
           </ul>
         <?php endif; ?>
+        <div class="row g-2 mt-1">
+          <?php foreach ($plans as $type => $plan): ?>
+            <div class="col-sm-4">
+              <a class="plan-mini" href="/account/assets/<?= $P::DEFAULTS[$type]['kind'] ?>/new<?= $type === 'business' ? '?type=business' : '' ?>">
+                <i class="bi bi-<?= e($P::DEFAULTS[$type]['icon']) ?>"></i>
+                <span class="fw-semibold">Add a <?= $type === 'vehicle' ? 'vehicle' : $type ?></span>
+                <span class="small text-body-secondary"><?= strip_tags(App\Core\View::partial('shared/price', ['s' => $plan])) ?></span>
+              </a>
+            </div>
+          <?php endforeach; ?>
+        </div>
       </div>
     </div>
   </div>
@@ -106,13 +114,16 @@
 
   <h2 class="h5 mb-3">Quick actions</h2>
   <div class="row g-3 mb-4">
-    <?php foreach ([
-      ['/account/incidents/new', 'megaphone', 'Report an incident', 'Crime, suspicious activity, accidents, emergencies'],
-      ['/account/assets/property/new', 'house-check', 'Protect your home', 'Register a property and apply for protection'],
-      ['/account/assets/vehicle/new', 'car-front', 'Protect your vehicle', 'Register a vehicle and apply'],
-      ['/account/services', 'bag-check', 'Book a service', 'Escorts, events, CCTV, assessments and more'],
-    ] as [$href, $ico, $h, $p]): ?>
-      <div class="col-sm-6 col-lg-3"><a class="action-card" href="<?= $href ?>"><div class="ico"><i class="bi bi-<?= $ico ?>"></i></div><div class="fw-semibold"><?= $h ?></div><p class="small text-body-secondary mb-0"><?= $p ?></p></a></div>
+    <?php
+    $wa = wa_number($t['whatsapp_number'] ?? null) ?: wa_number($t['emergency_phone'] ?? null);
+    $actions = [
+      ['/account/incidents/new', 'megaphone', 'Report an incident', 'Crime, suspicious activity, accidents. Goes straight to the control room.'],
+    ];
+    if ($wa) { $actions[] = ['https://wa.me/' . $wa, 'whatsapp', 'WhatsApp the control room', 'Message or call us on WhatsApp, 24/7.']; }
+    $actions[] = ['/account/services', 'bag-check', 'Book a service', 'Escorts, events, CCTV, assessments and more'];
+    $actions[] = ['/account/contacts', 'person-lines-fill', 'Emergency contacts', 'Who we call when you press panic'];
+    foreach ($actions as [$href, $ico, $h, $p]): ?>
+      <div class="col-sm-6 col-lg-3"><a class="action-card" href="<?= e($href) ?>"<?= str_starts_with($href, 'https://') ? ' target="_blank" rel="noopener"' : '' ?>><div class="ico"><i class="bi bi-<?= $ico ?>"></i></div><div class="fw-semibold"><?= $h ?></div><p class="small text-body-secondary mb-0"><?= $p ?></p></a></div>
     <?php endforeach; ?>
   </div>
 

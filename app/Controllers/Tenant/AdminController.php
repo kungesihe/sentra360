@@ -78,8 +78,11 @@ final class AdminController extends Controller
             'services_offered' => 'max:3000', 'primary_color' => 'required,color', 'secondary_color' => 'required,color',
             'contact_phone' => 'max:30', 'contact_email' => 'email,max:190', 'physical_address' => 'max:255',
             'emergency_phone' => 'max:30', 'emergency_notes' => 'max:500', 'terms_text' => 'max:60000', 'privacy_text' => 'max:60000',
-            'payment_instructions' => 'max:3000',
+            'payment_instructions' => 'max:3000', 'whatsapp_number' => 'max:20',
         ]);
+        if (($v->clean['whatsapp_number'] ?? null) !== null && !wa_number($v->clean['whatsapp_number'])) {
+            $v->addError('whatsapp_number', 'Enter a WhatsApp number like 082 123 4567.');
+        }
         $logo = Upload::imageData($_FILES['logo'] ?? []);
         if (isset($logo['error'])) {
             $v->addError('logo', $logo['error']);

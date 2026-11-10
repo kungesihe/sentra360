@@ -35,7 +35,6 @@ $router->get('/services', [HomeCommerceController::class, 'services']);
 $router->get('/pricelist', [HomeCommerceController::class, 'pricelist']);
 $router->get('/services/{id}', [HomeCommerceController::class, 'serviceShow']);
 $router->get('/files/{id}', [FilesController::class, 'show']);
-$router->postExternal('/payments/payfast/notify', [HomeCommerceController::class, 'payfastNotify']);
 
 // One sign-in for everyone; the account's role decides where it lands
 $router->get('/login', [AuthController::class, 'loginForm']);
@@ -103,7 +102,7 @@ $router->post('/account/requests/{id}/cancel', [HomeCommerceController::class, '
 $router->get('/account/quotations', [HomeCommerceController::class, 'quotations'], $home);
 $router->get('/account/quotations/{id}', [HomeCommerceController::class, 'quotation'], $home);
 $router->post('/account/quotations/{id}/respond', [HomeCommerceController::class, 'quotationRespond'], $home);
-$router->post('/account/quotations/{id}/pay', [HomeCommerceController::class, 'payOnline'], $home);
+$router->post('/account/quotations/{id}/proof', [HomeCommerceController::class, 'uploadProof'], $home);
 $router->get('/account/payments', [HomeCommerceController::class, 'payments'], $home);
 $router->get('/account/notifications', [HomeCommerceController::class, 'notifications'], $home);
 
@@ -131,6 +130,7 @@ $router->post('/admin/incidents/{id}/status', [StaffIncidentsController::class, 
 $router->post('/admin/incidents/{id}/note', [StaffIncidentsController::class, 'note'], $admin);
 $router->post('/admin/incidents/{id}/assign', [StaffIncidentsController::class, 'assign'], $admin);
 $router->post('/admin/incidents/{id}/acknowledge', [StaffIncidentsController::class, 'acknowledge'], $admin);
+$router->post('/admin/incidents/{id}/callback', [StaffIncidentsController::class, 'callBack'], $admin);
 $router->get('/admin/patrols', [StaffIncidentsController::class, 'patrols'], $admin);
 
 $router->get('/admin/applications', [AdminOpsController::class, 'applications'], $admin);
@@ -143,6 +143,7 @@ $router->get('/admin/quotations/{id}', [AdminOpsController::class, 'quotation'],
 $router->post('/admin/quotations/{id}/action', [AdminOpsController::class, 'quotationAction'], $admin);
 $router->post('/admin/quotations/{id}/payment', [AdminOpsController::class, 'paymentStore'], $admin);
 $router->get('/admin/payments', [AdminOpsController::class, 'payments'], $admin);
+$router->post('/admin/payments/{id}/review', [AdminOpsController::class, 'paymentReview'], $admin);
 $router->get('/admin/services', [AdminOpsController::class, 'services'], $admin);
 $router->get('/admin/pricelist', [AdminOpsController::class, 'pricelist'], $admin);
 $router->post('/admin/pricelist', [AdminOpsController::class, 'pricelistSave'], $admin);
@@ -174,6 +175,7 @@ $router->post('/security/incidents/{id}/status', [StaffIncidentsController::clas
 $router->post('/security/incidents/{id}/note', [StaffIncidentsController::class, 'note'], $security);
 $router->post('/security/incidents/{id}/assign', [StaffIncidentsController::class, 'assign'], $security);
 $router->post('/security/incidents/{id}/acknowledge', [StaffIncidentsController::class, 'acknowledge'], $security);
+$router->post('/security/incidents/{id}/callback', [StaffIncidentsController::class, 'callBack'], $security);
 $router->post('/security/incidents/{id}/response', [StaffIncidentsController::class, 'response'], $security);
 $router->get('/security/patrols', [StaffIncidentsController::class, 'patrols'], $security);
 $router->post('/security/patrols', [StaffIncidentsController::class, 'patrolStore'], $security);

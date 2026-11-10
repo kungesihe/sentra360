@@ -1,4 +1,5 @@
-<?php $isProp = $kind === 'property'; $o = $_SESSION['_old'] ?? []; $chosen = (array) ($o['services'] ?? []); $asset ??= null;
+<?php $isProp = $kind === 'property'; $o = $_SESSION['_old'] ?? []; $chosen = (array) ($o['extras'] ?? []); $asset ??= null; $presetType ??= null; $extras ??= [];
+$isBiz = ($o['property_type'] ?? $asset['property_type'] ?? $presetType) === App\Services\Plans::BUSINESS_TYPE;
 $v = fn(string $k, string $d = '') => $o ? old($k) : e((string) ($asset[$k] ?? $d)); ?>
 <div class="container py-4" style="max-width:900px">
   <?= App\Core\View::partial('home/_nav', ['active' => '/account/assets/' . $kind]) ?>
@@ -7,11 +8,11 @@ $v = fn(string $k, string $d = '') => $o ? old($k) : e((string) ($asset[$k] ?? $
   <form method="post" action="/account/assets/<?= $kind ?><?= $asset ? '/' . (int) $asset['id'] : '' ?>" enctype="multipart/form-data" novalidate>
     <?= csrf_field() ?>
     <div class="panel mb-4">
-      <h2 class="h6 text-uppercase text-body-secondary mb-3"><?= $isProp ? 'Property details' : 'Vehicle details' ?></h2>
+      <h2 class="h6 text-uppercase text-body-secondary mb-3"><?= $isProp ? ($isBiz ? 'Business details' : 'Home details') : 'Vehicle details' ?></h2>
       <div class="row g-3">
         <?php if ($isProp): ?>
-          <div class="col-md-6"><label class="form-label" for="name">Property name</label><input class="form-control" id="name" name="name" required placeholder="e.g. Home" value="<?= $v('name') ?>"></div>
-          <div class="col-md-6"><label class="form-label" for="property_type">Property type</label><select class="form-select" id="property_type" name="property_type"><?php foreach ($types as $tp): ?><option<?= $v('property_type') === e($tp) ? ' selected' : '' ?>><?= e($tp) ?></option><?php endforeach; ?></select></div>
+          <div class="col-md-6"><label class="form-label" for="name"><?= $isBiz ? 'Business name' : 'Name for this place' ?></label><input class="form-control" id="name" name="name" required placeholder="<?= $isBiz ? 'e.g. Block H Tuck Shop' : 'e.g. Home' ?>" value="<?= $v('name', $isBiz ? '' : ($asset ? '' : 'Home')) ?>"></div>
+          <div class="col-md-6"><label class="form-label" for="property_type">Type</label><select class="form-select" id="property_type" name="property_type" data-plan-switch><?php foreach ($types as $tp): ?><option<?= $v('property_type', (string) $presetType) === e($tp) ? ' selected' : '' ?>><?= e($tp) ?></option><?php endforeach; ?></select></div>
           <div class="col-12"><label class="form-label" for="address">Physical address</label><div class="input-group"><input class="form-control" id="address" name="address" required value="<?= $v('address') ?>"><button class="btn btn-outline-secondary" type="button" data-geo-fill data-geo-status="geo-status"><i class="bi bi-crosshair"></i> I'm there now</button></div>
             <input type="hidden" name="latitude" id="latitude"><input type="hidden" name="longitude" id="longitude"><div id="geo-status" class="form-text">Optional: capture GPS if you're at the property.</div></div>
           <div class="col-md-6"><label class="form-label" for="suburb">Suburb</label><input class="form-control" id="suburb" name="suburb" required placeholder="e.g. <?= e(area()['suburb_example']) ?>" value="<?= $v('suburb') ?>"></div>
@@ -35,14 +36,24 @@ $v = fn(string $k, string $d = '') => $o ? old($k) : e((string) ($asset[$k] ?? $
     </div>
     <?php if (!$asset): ?>
     <div class="panel mb-4">
-      <div class="form-check form-switch mb-3"><input class="form-check-input" type="checkbox" role="switch" id="apply" name="apply" value="1"<?= !$o || !empty($o['apply']) ? ' checked' : '' ?>><label class="form-check-label fw-semibold" for="apply">Apply for protection now</label></div>
-      <div class="row g-2">
-        <?php foreach ($serviceOptions as $i => $s): ?>
-          <div class="col-sm-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="services[]" value="<?= e($s) ?>" id="svc<?= $i ?>"<?= in_array($s, $chosen, true) ? ' checked' : '' ?>><label class="form-check-label" for="svc<?= $i ?>"><?= e($s) ?></label></div></div>
+      <h2 class="h6 text-uppercase text-body-secondary mb-3">Your protection plan</h2>
+      <div class="row g-3 mb-3">
+        <?php foreach ($plans as $type => $plan): if (($type === 'vehicle') === $isProp) continue; ?>
+          <div class="col-md-8<?= $isProp && ($type === 'business') !== $isBiz ? ' d-none' : '' ?>" data-plan-for="<?= e($type) ?>"><?= App\Core\View::partial('shared/plan_card', ['plan' => $plan]) ?></div>
         <?php endforeach; ?>
+        <?php if (!$plans): ?><div class="col-12 small text-body-secondary">Plans are being set up. Save this now and we'll contact you.</div><?php endif; ?>
       </div>
-      <textarea class="form-control mt-3" name="notes" rows="2" placeholder="Anything else about your request (optional)"><?= old('notes') ?></textarea>
-      <p class="small text-body-secondary mt-2 mb-0">Registering does not activate protection. The company reviews your application, may arrange an assessment, and sends you a quotation.</p>
+      <div class="form-check form-switch mb-3"><input class="form-check-input" type="checkbox" role="switch" id="apply" name="apply" value="1"<?= !$o || !empty($o['apply']) ? ' checked' : '' ?>><label class="form-check-label fw-semibold" for="apply">Yes, sign me up for this plan</label></div>
+      <?php if ($extras): ?>
+        <div class="small fw-semibold mb-1">Optional extras</div>
+        <div class="row g-1">
+          <?php foreach ($extras as $i => $x): ?>
+            <div class="col-sm-6"><div class="form-check small"><input class="form-check-input" type="checkbox" name="extras[]" value="<?= e($x['name']) ?>" id="x<?= $i ?>"<?= in_array($x['name'], $chosen, true) ? ' checked' : '' ?>><label class="form-check-label" for="x<?= $i ?>"><?= e($x['name']) ?> <span class="text-body-secondary">· <?= strip_tags(App\Core\View::partial('shared/price', ['s' => $x])) ?></span></label></div></div>
+          <?php endforeach; ?>
+        </div>
+      <?php endif; ?>
+      <textarea class="form-control mt-3" name="notes" rows="2" placeholder="Anything we should know (optional)"><?= old('notes') ?></textarea>
+      <p class="small text-body-secondary mt-2 mb-0">We confirm your details<?= $isProp ? '' : ' and book the tracker fitting' ?>, send a quotation to accept in the app, and your protection starts once it's paid.</p>
     </div>
     <?php endif; ?>
     <button class="btn btn-brand px-4"><?= $asset ? 'Save changes' : 'Save' ?></button><?php if ($asset): ?> <a href="/account/assets/<?= $kind ?>" class="btn btn-link">Cancel</a><?php endif; ?>

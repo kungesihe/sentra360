@@ -10,13 +10,12 @@ use App\Core\DB;
 use App\Core\HttpException;
 use App\Core\TenantContext;
 use App\Services\Ops;
+use App\Services\Plans;
 use App\Services\Workflow;
 
 /** Homeowner: properties, vehicles, and protection applications for them. */
 final class HomeAssetsController extends Controller
 {
-    public const PROPERTY_SERVICES = ['Armed response', 'Alarm monitoring', 'Residential security', 'Security patrols', 'CCTV installation', 'Electric fencing', 'Access control', 'Security assessment'];
-    public const VEHICLE_SERVICES = ['Vehicle tracking', 'Vehicle armed response', 'Vehicle recovery assistance', 'Escort to and from property'];
     public const PROPERTY_TYPES = ['House', 'Townhouse', 'Apartment / flat', 'Estate / complex', 'Farm / smallholding', 'Business premises', 'Other'];
 
     private function render(string $view, array $data): void
@@ -30,11 +29,16 @@ final class HomeAssetsController extends Controller
         return $kind;
     }
 
-    /** Extra service names configured by the company (active services), merged with the defaults. */
-    private static function serviceOptions(string $kind): array
+    /**
+     * What the customer signs up for: the plan that fits the asset (home, business or vehicle),
+     * plus any optional extras they ticked. Returns [service names, plan row or null].
+     */
+    private static function selection(string $kind, array $asset): array
     {
-        $base = $kind === 'property' ? self::PROPERTY_SERVICES : self::VEHICLE_SERVICES;
-        return array_values(array_unique($base));
+        $plan = Plans::forAsset($kind, $asset);
+        $extraNames = array_column(Plans::extras(), 'name');
+        $extras = array_values(array_intersect($extraNames, (array) ($_POST['extras'] ?? [])));
+        return [$plan ? array_merge([$plan['name']], $extras) : $extras, $plan];
     }
 
     public function index(string $kind): void
@@ -48,15 +52,17 @@ final class HomeAssetsController extends Controller
                FROM `$assetTable` a WHERE a.tenant_id = ? AND a.owner_id = ? ORDER BY a.id DESC",
             [TenantContext::id(), $u['id']]
         );
-        $this->render('assets', ['title' => $kind === 'property' ? 'My properties' : 'My vehicles', 'kind' => $kind, 'assets' => $assets]);
+        $this->render('assets', ['title' => $kind === 'property' ? 'My homes & businesses' : 'My vehicles', 'kind' => $kind, 'assets' => $assets,
+            'plans' => Plans::all(), 'extras' => Plans::extras()]);
     }
 
     public function create(string $kind): void
     {
         $kind = $this->kindOr404($kind);
         $this->render('asset_form', [
-            'title' => $kind === 'property' ? 'Register a property' : 'Register a vehicle', 'kind' => $kind,
-            'serviceOptions' => self::serviceOptions($kind), 'types' => self::PROPERTY_TYPES,
+            'title' => $kind === 'vehicle' ? 'Add a vehicle' : (($_GET['type'] ?? '') === 'business' ? 'Add a business' : 'Add a home'), 'kind' => $kind,
+            'plans' => Plans::all(), 'extras' => Plans::extras(), 'types' => self::PROPERTY_TYPES,
+            'presetType' => ($_GET['type'] ?? '') === 'business' ? Plans::BUSINESS_TYPE : null,
         ]);
     }
 
@@ -72,7 +78,7 @@ final class HomeAssetsController extends Controller
         $kind = $this->kindOr404($kind);
         $this->render('asset_form', [
             'title' => $kind === 'property' ? 'Edit property' : 'Edit vehicle', 'kind' => $kind, 'asset' => $this->ownAsset($kind, $id),
-            'serviceOptions' => self::serviceOptions($kind), 'types' => self::PROPERTY_TYPES,
+            'plans' => Plans::all(), 'extras' => [], 'types' => self::PROPERTY_TYPES, 'presetType' => null,
         ]);
     }
 
@@ -143,13 +149,13 @@ final class HomeAssetsController extends Controller
                 $v->addError('year', 'Enter a valid year, e.g. 2019.');
             }
         }
-        $services = array_values(array_intersect(self::serviceOptions($kind), (array) ($_POST['services'] ?? [])));
         $apply = !empty($_POST['apply']);
-        if ($apply && !$services) {
-            $v->addError('services', 'Choose at least one service to apply for.');
+        [$services, $plan] = self::selection($kind, $v->clean);
+        if ($apply && !$plan) {
+            $v->addError('apply', 'No protection plan is available for this yet. Save it and contact us.');
         }
         if ($v->fails()) {
-            $this->backWithErrors("/account/assets/$kind/new", $v->errors);
+            $this->backWithErrors("/account/assets/$kind/new" . (($v->clean['property_type'] ?? '') === Plans::BUSINESS_TYPE ? '?type=business' : ''), $v->errors);
         }
         [$appTable, $assetTable, $fk, $prefix] = Workflow::kind($kind);
         $data = $v->clean + ['tenant_id' => $tid, 'owner_id' => $u['id']];
@@ -163,10 +169,10 @@ final class HomeAssetsController extends Controller
         Ops::storeUploads($kind, $assetId, 'files', 5, ['image/png', 'image/jpeg', 'image/webp']);
         if ($apply) {
             $appId = self::createApplication($kind, $assetId, $services, trim((string) ($_POST['notes'] ?? '')) ?: null);
-            flash('success', 'Saved and application submitted. We will review it and contact you.');
+            flash('success', "Saved. Your {$plan['name']} request is in: we'll confirm and send your quotation.");
             redirect("/account/applications/$kind/$appId");
         }
-        flash('success', ($kind === 'property' ? 'Property' : 'Vehicle') . ' saved. You can apply for protection at any time.');
+        flash('success', 'Saved to your protection list. Choose a plan at any time.');
         redirect("/account/assets/$kind");
     }
 
@@ -194,12 +200,12 @@ final class HomeAssetsController extends Controller
             flash('info', 'There is already an open application for this ' . $kind . '.');
             redirect("/account/applications/$kind/$open");
         }
-        $services = array_values(array_intersect(self::serviceOptions($kind), (array) ($_POST['services'] ?? [])));
-        if (!$services) {
-            $this->backWithErrors("/account/assets/$kind", ['services' => 'Choose at least one service.']);
+        [$services, $plan] = self::selection($kind, $asset);
+        if (!$plan) {
+            $this->backWithErrors("/account/assets/$kind", ['apply' => 'No protection plan is available for this yet. Please contact us.']);
         }
         $appId = self::createApplication($kind, (int) $asset['id'], $services, trim((string) ($_POST['notes'] ?? '')) ?: null);
-        flash('success', 'Application submitted.');
+        flash('success', "Your {$plan['name']} request is in. We'll confirm and send your quotation.");
         redirect("/account/applications/$kind/$appId");
     }
 
@@ -214,7 +220,6 @@ final class HomeAssetsController extends Controller
             'timeline' => Ops::timeline($kind . '_application', (int) $app['id'], false),
             'quotes' => DB::all('SELECT * FROM quotations WHERE tenant_id = ? AND subject_type = ? AND subject_id = ? AND status <> "draft" ORDER BY id DESC',
                 [TenantContext::id(), $kind, $app['id']]),
-            'serviceOptions' => self::serviceOptions($kind),
         ]);
     }
 

@@ -26,7 +26,7 @@ final class FilesController extends Controller
             if ($u['is_staff']) {
                 $allowed = true;
             } else {
-                $ownerCol = ['incident' => ['incidents', 'reporter_id'], 'property' => ['registered_properties', 'owner_id'], 'vehicle' => ['registered_vehicles', 'owner_id']][$f['owner_type']] ?? null;
+                $ownerCol = ['incident' => ['incidents', 'reporter_id'], 'property' => ['registered_properties', 'owner_id'], 'vehicle' => ['registered_vehicles', 'owner_id'], 'payment' => ['payments', 'customer_id']][$f['owner_type']] ?? null;
                 if ($ownerCol) {
                     [$table, $col] = $ownerCol;
                     $allowed = (int) DB::value("SELECT `$col` FROM `$table` WHERE id = ? AND tenant_id = ?", [$f['owner_id'], TenantContext::id()]) === (int) $u['id'];

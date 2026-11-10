@@ -103,9 +103,8 @@ final class Installer
             return;
         }
         $list = [
-            ['Armed response', 'Residential', 'Rapid armed response to alarm activations and panic alerts at your protected property.', 'per month'],
-            ['Alarm monitoring', 'Residential', '24/7 monitoring of your alarm system by our control room.', 'per month'],
-            ['Security patrols', 'Residential', 'Scheduled and random patrols of your street or estate.', 'per month'],
+            ['Alarm monitoring', 'Add-ons', '24/7 monitoring of your alarm system by our control room.', 'per month'],
+            ['Security patrols', 'Add-ons', 'Scheduled and random patrols of your street or estate.', 'per month'],
             ['VIP escort', 'Specialised', 'Trained close-protection officers for VIP movements.', 'per hour'],
             ['Executive protection', 'Specialised', 'Executive close protection for business travel and events.', 'per day'],
             ['Personal security escort', 'Specialised', 'An officer accompanies you to and from a location.', 'per trip'],

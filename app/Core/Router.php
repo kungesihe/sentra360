@@ -21,7 +21,7 @@ final class Router
         $this->add('POST', $path, $handler, $mw);
     }
 
-    /** POST without CSRF: only for server-to-server callbacks that verify themselves (e.g. PayFast ITN). */
+    /** POST without CSRF: only for server-to-server callbacks that verify themselves (none in use today). */
     public function postExternal(string $path, array $handler): void
     {
         $this->add('POST', $path, $handler, [], false);

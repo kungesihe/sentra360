@@ -68,9 +68,29 @@ $home = $u ? App\Core\Auth::PORTALS[$u['portal']][2] : null;
       <i class="bi bi-arrow-right"></i>
       <div><span>3</span>You're connected</div>
     </div>
+    <p class="text-center text-body-secondary small mt-3 mb-0">Free for everyone: the panic button, incident reports and a WhatsApp call-back from our control room.</p>
+  </div>
+</section>
+
+<?php $plans = App\Services\Plans::all(); if ($plans): ?>
+<section class="pb-5">
+  <div class="container">
+    <div class="text-center mb-4">
+      <h2 class="h4 mb-1">Protection plans</h2>
+      <p class="text-body-secondary mb-0">One monthly plan for what matters most. Every plan includes 24/7 armed response.</p>
+    </div>
+    <div class="row g-3 justify-content-center">
+      <?php foreach ($plans as $type => $plan): ?>
+        <div class="col-md-4"><?= App\Core\View::partial('shared/plan_card', ['plan' => $plan, 'cta' => [
+            ($u && $u['portal'] === 'homeowner') ? '/account/assets/' . App\Services\Plans::DEFAULTS[$type]['kind'] . '/new' . ($type === 'business' ? '?type=business' : '') : '/register',
+            $type === 'vehicle' ? 'Protect my vehicle' : ($type === 'business' ? 'Protect my business' : 'Protect my home'),
+        ]]) ?></div>
+      <?php endforeach; ?>
+    </div>
     <p class="text-center text-body-secondary small mt-4 mb-0">
-      Want full protection for your home or car? <a href="<?= $u ? '/account/assets/property/new' : '/register' ?>">Apply in the app</a> · <a href="/services">See our services</a><br>
+      <a href="/pricelist">Full price list</a> · <a href="/services">Once-off services</a><br>
       In a life-threatening emergency, also call SAPS on <a href="tel:10111">10111</a> or an ambulance on <a href="tel:10177">10177</a>.
     </p>
   </div>
 </section>
+<?php endif; ?>

@@ -265,4 +265,23 @@ final class Incidents
             Audit::log('panic.acknowledged', 'panic_alert', $alert['id']);
         }
     }
+
+    /**
+     * The control room calls the person back (on WhatsApp by default). Calling back also
+     * acknowledges the alert. The person sees the call-back time on their alert screen.
+     */
+    public static function callBack(array $alert, string $method = 'whatsapp'): void
+    {
+        self::acknowledgePanic($alert);
+        $method = in_array($method, ['whatsapp', 'phone'], true) ? $method : 'whatsapp';
+        DB::update('panic_alerts', ['callback_at' => now(), 'callback_by' => Auth::user()['id'], 'callback_method' => $method],
+            ['id' => $alert['id'], 'tenant_id' => TenantContext::id()]);
+        $how = $method === 'whatsapp' ? 'on WhatsApp' : 'by phone';
+        if ($alert['incident_id']) {
+            $inc = self::find((int) $alert['incident_id']);
+            Ops::event('incident', (int) $alert['incident_id'], $inc['status'] ?? null, $inc['status'] ?? null, "The control room is calling you back $how.");
+        }
+        Ops::notify((int) $alert['customer_id'], 'The control room is calling you back', "We are calling you back $how about your panic alert {$alert['reference']}. Please answer.", '/account/panic/' . $alert['reference']);
+        Audit::log('panic.callback', 'panic_alert', $alert['id'], ['method' => $method]);
+    }
 }

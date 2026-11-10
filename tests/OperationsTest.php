@@ -122,7 +122,8 @@ T::test('Residential protection: application → quotation → acceptance → pa
     T::eq('accepted', DB::value('SELECT status FROM quotations WHERE id = ?', [$q['id']]), 'accepted');
     T::eq('awaiting_payment', DB::value('SELECT status FROM property_applications WHERE id = ?', [$app['id']]), 'awaiting payment');
     $h->get("/account/quotations/{$q['id']}");
-    T::notContains('Pay R', $h->body, 'no online-payment button while PayFast is not configured');
+    T::notContains('PayFast', $h->body, 'no online card payments');
+    T::contains('Upload your proof of payment', $h->body, 'customer is asked for proof of payment');
 
     $ad->get("/admin/quotations/{$q['id']}");
     $ad->post("/admin/quotations/{$q['id']}/payment", ['amount' => '748.08', 'method' => 'eft', 'provider_reference' => 'FNB-123']);
@@ -378,11 +379,11 @@ T::test('Price list: admin edits every price in one place; public and homeowners
     $home = T::user('homeowner');
     $h = T::login($home);
     $h->get('/account');
-    T::contains('My protection list', $h->body, 'dashboard shows the protection list');
-    T::contains('Home protection from', $h->body, 'with the starting price');
+    T::contains('My protection', $h->body, 'dashboard shows the protection card');
+    T::contains('Add a business', $h->body, 'with the three plans');
     T::completeProfile($home);
     $h->get('/account');
-    T::contains('Add protection', $h->body, 'unprotected home gets an "Add protection" button');
+    T::contains('Get protected', $h->body, 'unprotected home gets a "Get protected" button');
     $h->post('/admin/pricelist', ['pricing' => [$armed['id'] => 'fixed'], 'price' => [$armed['id'] => '1']]);
     T::eq(403, $h->status, 'homeowners cannot change prices');
     DB::run('DELETE FROM services WHERE id IN (?, ?)', [$armed['id'], $cctv['id']]);
@@ -416,4 +417,119 @@ T::test('Soshanguve area: landing, control room map and address defaults; owners
     $other->post("/account/assets/property/$pid", ['name' => 'X', 'property_type' => 'House', 'address' => 'x', 'suburb' => 'x', 'city' => 'x']);
     T::eq(404, $other->status, 'cannot change someone else\'s property');
     T::eq('1452 Block L', DB::value('SELECT address FROM registered_properties WHERE id = ?', [$pid]), 'unchanged');
+});
+
+T::test('Protection plans: home, business and vehicle each get the right monthly plan; quotation is pre-priced', function () {
+    $home = T::user('homeowner');
+    $h = T::login($home);
+    $h->get('/account/assets/property/new?type=business');
+    T::contains('Business alarm plan', $h->body, 'business form shows the business plan');
+    $h->post('/account/assets/property', ['name' => 'Spaza', 'property_type' => 'Business premises', 'address' => '12 Block H', 'suburb' => 'Soshanguve Block H', 'city' => 'Pretoria',
+        'apply' => 1, 'extras' => ['Not a real extra']]);
+    $app = DB::one('SELECT * FROM property_applications WHERE applicant_id = ? ORDER BY id DESC', [$home['id']]);
+    T::eq(['Business alarm plan'], json_decode($app['services_requested'], true), 'business gets the business alarm plan; unknown extras ignored');
+
+    $h->get('/account/assets/property/new');
+    $h->post('/account/assets/property', ['name' => 'Home', 'property_type' => 'House', 'address' => '1 Block L', 'suburb' => 'Soshanguve Block L', 'city' => 'Pretoria', 'apply' => 1]);
+    $homeApp = DB::one('SELECT * FROM property_applications WHERE applicant_id = ? ORDER BY id DESC', [$home['id']]);
+    T::eq(['Home protection plan'], json_decode($homeApp['services_requested'], true), 'a house gets the home plan');
+
+    $h->get('/account/assets/vehicle/new');
+    $h->post('/account/assets/vehicle', ['make' => 'Toyota', 'model' => 'Corolla', 'registration' => 'ab 12 cd gp', 'colour' => 'White', 'apply' => 1]);
+    $vApp = DB::one('SELECT * FROM vehicle_applications WHERE applicant_id = ? ORDER BY id DESC', [$home['id']]);
+    T::eq(['Vehicle tracking plan'], json_decode($vApp['services_requested'], true), 'a car gets the tracker plan');
+
+    $admin = T::login(T::user('admin'));
+    $admin->get("/admin/quotations/new/vehicle/{$vApp['id']}");
+    T::contains('Vehicle tracking plan (per month)', $admin->body, 'quotation pre-filled with the plan');
+    T::contains('value="199.00"', $admin->body, 'monthly price filled in');
+    T::contains('Tracker supply and fitting', $admin->body, 'once-off fitting fee added');
+    T::contains('value="1500.00"', $admin->body, 'fitting price filled in');
+
+    $plan = DB::one('SELECT * FROM services WHERE tenant_id = ? AND plan_for = "home"', [T::$companyId]);
+    $h->get('/account/services/' . $plan['id']);
+    T::eq(404, $h->status, 'plans are not booked in the services marketplace');
+    $pub = new Http(T::HOST);
+    $pub->get('/');
+    T::contains('Protection plans', $pub->body, 'landing page shows the plans');
+    $pub->get('/pricelist');
+    T::contains('Monthly protection plans', $pub->body, 'price list leads with the plans');
+});
+
+T::test('Panic call-back: control room calls back on WhatsApp and the person sees it', function () {
+    $member = T::user('homeowner');
+    T::completeProfile($member);
+    $m = T::login($member);
+    $m->get('/account/panic');
+    $m->post('/account/panic', ['confirm' => 1, 'location_status' => 'denied']);
+    $pa = DB::one('SELECT * FROM panic_alerts WHERE customer_id = ?', [$member['id']]);
+    $m->get('/account/panic/' . $pa['reference']);
+    T::contains('call you back on WhatsApp', $m->body, 'person is told to expect a WhatsApp call-back');
+
+    $s = T::login(T::user('security_staff'));
+    $s->get('/security');
+    $s->post("/security/incidents/{$pa['incident_id']}/callback", ['method' => 'whatsapp']);
+    T::eq(302, $s->status, 'redirects to WhatsApp');
+    T::true(str_starts_with($s->headers['location'] ?? '', 'https://wa.me/' . wa_number($member['mobile'])), 'opens WhatsApp on the person\'s number');
+    $row = DB::one('SELECT * FROM panic_alerts WHERE id = ?', [$pa['id']]);
+    T::true($row['callback_at'] !== null && $row['callback_method'] === 'whatsapp', 'call-back recorded');
+    T::eq('acknowledged', $row['status'], 'calling back also acknowledges the alert');
+
+    $m->get("/account/panic/{$pa['reference']}/status");
+    $j = json_decode($m->body, true);
+    T::true($j['callback_at'] !== null, 'person sees the call-back time');
+
+    $other = T::login(T::user('homeowner'));
+    $other->get('/account');
+    $other->post("/security/incidents/{$pa['incident_id']}/callback", []);
+    T::eq(403, $other->status, 'homeowners cannot trigger call-backs');
+});
+
+T::test('EFT proof of payment: customer uploads, admin approves or rejects, protection follows', function () {
+    $home = T::user('homeowner');
+    $h = T::login($home);
+    $h->get('/account/assets/property/new');
+    $h->post('/account/assets/property', ['name' => 'Home', 'property_type' => 'House', 'address' => '9 Block L', 'suburb' => 'Soshanguve Block L', 'city' => 'Pretoria', 'apply' => 1]);
+    $app = DB::one('SELECT * FROM property_applications WHERE applicant_id = ?', [$home['id']]);
+    $admin = T::login(T::user('admin'));
+    $admin->get("/admin/quotations/new/property/{$app['id']}");
+    $admin->post("/admin/quotations/new/property/{$app['id']}", ['desc' => ['Home protection plan (per month)'], 'qty' => ['1'], 'price' => ['450'], 'billing' => 'monthly',
+        'valid_until' => date('Y-m-d', strtotime('+14 days')), 'send' => '1']);
+    $q = DB::one('SELECT * FROM quotations WHERE subject_type = "property" AND subject_id = ?', [$app['id']]);
+    $h->get("/account/quotations/{$q['id']}");
+    $h->post("/account/quotations/{$q['id']}/respond", ['decision' => 'accept']);
+
+    $h->get("/account/quotations/{$q['id']}");
+    $h->post("/account/quotations/{$q['id']}/proof", ['amount' => '450']);
+    T::eq(0, (int) DB::value('SELECT COUNT(*) FROM payments WHERE quotation_id = ?', [$q['id']]), 'no proof without a file');
+
+    $pdf = tempnam(sys_get_temp_dir(), 'pop');
+    file_put_contents($pdf, "%PDF-1.4\n1 0 obj << /Type /Catalog >> endobj\ntrailer << /Root 1 0 R >>\n%%EOF\n");
+    $h->get("/account/quotations/{$q['id']}");
+    $h->post("/account/quotations/{$q['id']}/proof", ['amount' => '450.00', 'bank_reference' => $q['reference'], 'pop[0]' => new CURLFile($pdf, 'application/pdf', 'pop.pdf')]);
+    $pm = DB::one('SELECT * FROM payments WHERE quotation_id = ?', [$q['id']]);
+    T::true($pm !== null && $pm['status'] === 'pending', 'proof saved, waiting to be checked');
+    T::eq('awaiting_payment', DB::value('SELECT status FROM property_applications WHERE id = ?', [$app['id']]), 'not paid until the admin approves');
+    $file = (int) DB::value('SELECT id FROM files WHERE owner_type = "payment" AND owner_id = ?', [$pm['id']]);
+    $h->get("/files/$file");
+    T::eq(200, $h->status, 'customer can open their own proof');
+    $other = T::login(T::user('homeowner'));
+    $other->get("/files/$file");
+    T::eq(403, $other->status, 'other homeowners cannot');
+
+    $admin->get('/admin/payments');
+    T::contains('Proofs of payment to check', $admin->body, 'admin sees proofs to check');
+    T::contains("/admin/payments/{$pm['id']}/review", $admin->body, 'with approve / reject');
+    $admin->post("/admin/payments/{$pm['id']}/review", ['decision' => 'reject', 'reason' => 'not in our account yet']);
+    T::eq('failed', DB::value('SELECT status FROM payments WHERE id = ?', [$pm['id']]), 'rejected');
+    $h->get("/account/quotations/{$q['id']}");
+    T::contains('not in our account yet', $h->body, 'customer sees why');
+
+    $h->post("/account/quotations/{$q['id']}/proof", ['amount' => '450.00', 'pop[0]' => new CURLFile($pdf, 'application/pdf', 'pop.pdf')]);
+    $pm2 = DB::one('SELECT * FROM payments WHERE quotation_id = ? AND status = "pending"', [$q['id']]);
+    $admin->get('/admin/payments');
+    $admin->post("/admin/payments/{$pm2['id']}/review", ['decision' => 'approve']);
+    T::eq('paid', DB::value('SELECT status FROM payments WHERE id = ?', [$pm2['id']]), 'approved');
+    T::eq('approved', DB::value('SELECT status FROM property_applications WHERE id = ?', [$app['id']]), 'application approved once paid');
+    @unlink($pdf);
 });

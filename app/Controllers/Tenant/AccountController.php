@@ -37,16 +37,16 @@ final class AccountController extends Controller
             'pendingQuotes' => DB::all('SELECT id, reference, total_cents FROM quotations WHERE tenant_id = ? AND customer_id = ? AND status = "sent" ORDER BY id DESC', [$tid, $uid]),
             'verify' => (bool) config('require_verification'),
             'assets' => DB::all(
-                "SELECT 'property' AS kind, r.id, CONCAT(r.name, ' · ', r.address, ', ', r.suburb) AS label, r.protection_status,
+                "SELECT 'property' AS kind, r.id, r.property_type, CONCAT(r.name, ' · ', r.address, ', ', r.suburb) AS label, r.protection_status,
                         (SELECT a.status FROM property_applications a WHERE a.property_id = r.id ORDER BY a.id DESC LIMIT 1) AS app_status
                    FROM registered_properties r WHERE r.tenant_id = ? AND r.owner_id = ?
                  UNION ALL
-                 SELECT 'vehicle', v.id, CONCAT(v.make, ' ', v.model, ' · ', v.registration), v.protection_status,
+                 SELECT 'vehicle', v.id, NULL, CONCAT(v.make, ' ', v.model, ' · ', v.registration), v.protection_status,
                         (SELECT a.status FROM vehicle_applications a WHERE a.vehicle_id = v.id ORDER BY a.id DESC LIMIT 1)
                    FROM registered_vehicles v WHERE v.tenant_id = ? AND v.owner_id = ?",
                 [$tid, $uid, $tid, $uid]
             ),
-            'protectionFrom' => DB::one('SELECT price_cents, price_unit FROM services WHERE tenant_id = ? AND is_active = 1 AND category = "Residential" AND pricing IN ("fixed","from") AND price_cents > 0 ORDER BY price_cents LIMIT 1', [$tid]),
+            'plans' => \App\Services\Plans::all(),
         ], 'tenant');
     }
 

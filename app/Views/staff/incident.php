@@ -20,6 +20,10 @@ $points = array_map(fn($p) => [(float) $p['latitude'], (float) $p['longitude']],
     <?php if (in_array($panic['status'], ['submitted', 'delivered'], true)): ?>
       <form method="post" action="<?= $base ?>/incidents/<?= (int) $inc['id'] ?>/acknowledge"><?= csrf_field() ?><button class="btn btn-light fw-bold">Acknowledge</button></form>
     <?php endif; ?>
+    <?php if (!in_array($panic['status'], ['resolved', 'cancelled'], true)): ?>
+      <form method="post" action="<?= $base ?>/incidents/<?= (int) $inc['id'] ?>/callback" target="_blank"><?= csrf_field() ?><input type="hidden" name="method" value="whatsapp"><button class="btn btn-success fw-bold"><i class="bi bi-whatsapp"></i> WhatsApp call-back</button></form>
+    <?php endif; ?>
+    <?php if ($panic['callback_at']): ?><div class="w-100 small"><i class="bi bi-telephone-outbound"></i> Called back <?= $panic['callback_method'] === 'phone' ? 'by phone' : 'on WhatsApp' ?> at <?= e(date('H:i', strtotime($panic['callback_at']))) ?></div><?php endif; ?>
   </div>
 <?php endif; ?>
 

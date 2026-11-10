@@ -180,6 +180,7 @@ final class HomeIncidentsController extends Controller
             'status' => $a['status'], 'label' => Ops::label($a['status']), 'incident_status' => $inc['status'] ?? null,
             'submitted_at' => $a['created_at'], 'delivered_at' => $a['delivered_at'], 'acknowledged_at' => $a['acknowledged_at'],
             'dispatched_at' => $a['dispatched_at'], 'resolved_at' => $a['resolved_at'], 'cancelled_at' => $a['cancelled_at'],
+            'callback_at' => $a['callback_at'], 'callback_method' => $a['callback_method'],
             'officer' => $officer ? ['name' => $officer['first_name'], 'status' => Ops::label($officer['status'])] : null,
         ]);
     }

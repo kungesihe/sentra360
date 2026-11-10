@@ -6,7 +6,7 @@
   <?php foreach ([
     ['/admin/incidents?status=submitted', 'megaphone', 'New incident reports', $ops['new_incidents']],
     ['/admin/incidents?status=open', 'activity', 'Open incidents', $ops['open_incidents']],
-    ['/admin/incidents?status=open', 'broadcast-pin', 'Active emergencies', $ops['active_panics']],
+    ['/admin/payments', 'receipt', 'Proofs of payment to check', (int) App\Core\DB::value('SELECT COUNT(*) FROM payments WHERE tenant_id = ? AND status = "pending"', [App\Core\TenantContext::id()])],
     ['/admin/reports', 'exclamation-triangle', 'Panic alerts (30 days)', $ops['panics_30']],
     ['/admin/applications?kind=property', 'house-check', 'Residential applications', $ops['prop_apps']],
     ['/admin/applications?kind=vehicle', 'car-front', 'Vehicle applications', $ops['veh_apps']],

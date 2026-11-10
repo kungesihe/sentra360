@@ -27,7 +27,11 @@
   <?php else: ?>
     <?php if (!$client): ?>
       <div class="alert alert-light border small">
-        <strong>You're a community member.</strong> Your alert goes straight to the <?= e($t['display_name']) ?> control room, who will help where they can and call the police if needed. A guaranteed armed response is part of a <a href="/account/assets/property">protection plan</a>.
+        <strong>You're a community member.</strong> Your alert goes straight to the <?= e($t['display_name']) ?> control room. They call you back on WhatsApp, help where they can and call the police if needed. Guaranteed armed response comes with a <a href="/account/pricelist">protection plan</a>.
+      </div>
+    <?php else: ?>
+      <div class="alert alert-success small">
+        <strong>You're on a protection plan.</strong> Your alert is handled first: armed response is dispatched and the control room calls you back on WhatsApp.
       </div>
     <?php endif; ?>
     <div class="alert alert-warning small">

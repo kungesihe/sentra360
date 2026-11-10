@@ -223,6 +223,23 @@ final class StaffIncidentsController extends Controller
         $this->back($inc);
     }
 
+    /** Record the call-back, then open WhatsApp (or the phone dialler) on the person's number. */
+    public function callBack(string $id): void
+    {
+        $inc = $this->load($id);
+        $panic = DB::one('SELECT * FROM panic_alerts WHERE incident_id = ? AND tenant_id = ?', [$inc['id'], TenantContext::id()]) ?? throw new HttpException(404);
+        $mobile = (string) DB::value('SELECT mobile FROM users WHERE id = ?', [$panic['customer_id']]);
+        $method = ($_POST['method'] ?? 'whatsapp') === 'phone' ? 'phone' : 'whatsapp';
+        Incidents::callBack($panic, $method);
+        $wa = wa_number($mobile);
+        if ($method === 'whatsapp' && $wa) {
+            $msg = rawurlencode('Hi, this is the ' . TenantContext::current()['display_name'] . " control room about your panic alert {$panic['reference']}. We're calling you now.");
+            redirect("https://wa.me/$wa?text=$msg");
+        }
+        flash('success', 'Call-back recorded. Call ' . $mobile . ' now.');
+        $this->back($inc);
+    }
+
     // ------------------------------------------------------------ control room
 
     public function controlRoom(): void
@@ -236,13 +253,13 @@ final class StaffIncidentsController extends Controller
         $tid = TenantContext::id();
         $panics = DB::all(
             'SELECT pa.id, pa.reference, pa.status, pa.created_at, pa.latitude, pa.longitude, pa.accuracy_m, pa.location_status, pa.silent, pa.extra_info,
-                    pa.incident_id, p.first_name, p.surname, u.mobile, rp.name AS property_name, rp.address, rp.suburb,
+                    pa.incident_id, pa.callback_at, pa.callback_method, p.first_name, p.surname, u.mobile, rp.name AS property_name, rp.address, rp.suburb,
                     (u.client_status = "client"
                       OR EXISTS (SELECT 1 FROM registered_properties x WHERE x.owner_id = u.id AND x.protection_status = "active")
                       OR EXISTS (SELECT 1 FROM registered_vehicles y WHERE y.owner_id = u.id AND y.protection_status = "active")) AS is_client
                FROM panic_alerts pa JOIN users u ON u.id = pa.customer_id JOIN user_profiles p ON p.user_id = u.id
                LEFT JOIN registered_properties rp ON rp.id = pa.property_id
-              WHERE pa.tenant_id = ? AND pa.status NOT IN ("resolved","cancelled") ORDER BY pa.id DESC',
+              WHERE pa.tenant_id = ? AND pa.status NOT IN ("resolved","cancelled") ORDER BY is_client DESC, pa.id DESC',
             [$tid]
         );
         Incidents::markDelivered(array_map(fn($p) => (int) $p['id'], array_filter($panics, fn($p) => $p['status'] === 'submitted')));

@@ -4,6 +4,12 @@
   <?php require BASE_PATH . '/app/Views/partials/flash.php'; ?>
   <h1 class="h4">Services from <?= e(tenant()['display_name']) ?></h1>
   <p class="text-body-secondary">Choose a service and send a request. We'll confirm availability and pricing before anything is booked. <a href="<?= $public ? '/pricelist' : '/account/pricelist' ?>">See the full price list</a>.</p>
+  <?php if (App\Services\Plans::all()): ?>
+    <a href="<?= $public ? '/pricelist' : '/account/assets/property' ?>" class="alert alert-success d-flex align-items-center gap-3 text-decoration-none">
+      <i class="bi bi-shield-check fs-3"></i>
+      <div><strong>Looking for monthly protection?</strong> Home, vehicle tracking and business alarm plans, all with 24/7 armed response. <span class="text-decoration-underline">See the plans</span></div>
+    </a>
+  <?php endif; ?>
   <?php foreach ($groups as $cat => $list): ?>
     <h2 class="h6 text-uppercase text-body-secondary mt-4 mb-3"><?= e($cat) ?></h2>
     <div class="row g-3">

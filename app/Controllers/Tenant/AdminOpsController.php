@@ -90,8 +90,16 @@ final class AdminOpsController extends Controller
             $svc = DB::one('SELECT * FROM services WHERE id = ?', [$subject['service_id']]);
             $prefill[] = ['description' => $svc['name'] . ' · ' . $subject['requested_date'] . ($subject['duration_text'] ? ' (' . $subject['duration_text'] . ')' : ''), 'qty' => 1, 'price' => $svc['price_cents'] ? number_format($svc['price_cents'] / 100, 2, '.', '') : ''];
         } else {
+            // Plans and extras are priced from the price list, so the quotation is ready to send.
+            $tid = TenantContext::id();
+            $money = fn($c) => $c ? number_format($c / 100, 2, '.', '') : '';
             foreach (json_decode((string) $subject['services_requested'], true) ?: [] as $s) {
-                $prefill[] = ['description' => $s, 'qty' => 1, 'price' => ''];
+                $svc = DB::one('SELECT * FROM services WHERE tenant_id = ? AND name = ? ORDER BY plan_for IS NULL LIMIT 1', [$tid, $s]);
+                $unit = $svc && $svc['price_unit'] ? ' (' . $svc['price_unit'] . ')' : '';
+                $prefill[] = ['description' => $s . $unit, 'qty' => 1, 'price' => $svc && $svc['pricing'] !== 'quote' ? $money((int) $svc['price_cents']) : ''];
+                if ($svc && $svc['plan_for'] && $svc['setup_cents']) {
+                    $prefill[] = ['description' => ($svc['plan_for'] === 'vehicle' ? 'Tracker supply and fitting' : 'Alarm supply and installation') . ' (once-off, first payment only)', 'qty' => 1, 'price' => $money((int) $svc['setup_cents'])];
+                }
             }
         }
         $customer = DB::one('SELECT p.first_name, p.surname FROM user_profiles p WHERE p.user_id = ?', [$subject['applicant_id'] ?? $subject['customer_id']]);
@@ -186,7 +194,33 @@ final class AdminOpsController extends Controller
                LEFT JOIN quotations q ON q.id = pm.quotation_id WHERE pm.tenant_id = ? ORDER BY pm.id DESC LIMIT 300',
             [TenantContext::id()]
         );
-        $this->render('payments', ['title' => 'Payments', 'rows' => $rows, 'payfast' => \App\Services\PayFast::configured()]);
+        $proofs = DB::all(
+            'SELECT pm.*, p.first_name, p.surname, q.reference AS quote_ref, q.total_cents,
+                    (SELECT f.id FROM files f WHERE f.tenant_id = pm.tenant_id AND f.owner_type = "payment" AND f.owner_id = pm.id ORDER BY f.id LIMIT 1) AS file_id
+               FROM payments pm JOIN user_profiles p ON p.user_id = pm.customer_id LEFT JOIN quotations q ON q.id = pm.quotation_id
+              WHERE pm.tenant_id = ? AND pm.status = "pending" ORDER BY pm.id',
+            [TenantContext::id()]
+        );
+        $this->render('payments', ['title' => 'Payments', 'rows' => $rows, 'proofs' => $proofs]);
+    }
+
+    /** Approve (payment received in the bank) or reject an uploaded proof of payment. */
+    public function paymentReview(string $id): void
+    {
+        $pm = DB::one('SELECT * FROM payments WHERE id = ? AND tenant_id = ? AND status = "pending"', [(int) $id, TenantContext::id()]) ?? throw new HttpException(404);
+        $q = $pm['quotation_id'] ? Workflow::quotation((int) $pm['quotation_id']) : null;
+        if (($_POST['decision'] ?? '') === 'approve') {
+            Workflow::recordPayment((int) $pm['customer_id'], $q, (int) $pm['amount_cents'], 'eft', $pm['provider_reference'], 'Proof of payment checked', (int) Auth::user()['id'], (int) $pm['id']);
+            DB::update('payments', ['recorded_by' => Auth::user()['id']], ['id' => $pm['id']]);
+            flash('success', 'Payment approved: ' . money_exact((int) $pm['amount_cents']) . '.');
+        } else {
+            $reason = mb_substr(trim((string) ($_POST['reason'] ?? '')), 0, 200) ?: 'the amount did not reflect in our bank account';
+            DB::update('payments', ['status' => 'failed', 'notes' => $reason, 'recorded_by' => Auth::user()['id']], ['id' => $pm['id']]);
+            Audit::log('payment.proof_rejected', 'payment', $pm['id'], ['reason' => $reason]);
+            Ops::notify((int) $pm['customer_id'], 'Proof of payment not accepted', "We could not confirm your payment of " . money_exact((int) $pm['amount_cents']) . ": $reason. Please check and upload it again.", $q ? "/account/quotations/{$q['id']}" : '/account/payments');
+            flash('info', 'Proof of payment rejected. The customer has been told why.');
+        }
+        redirect('/admin/payments');
     }
 
     public function paymentStore(string $id): void
@@ -250,6 +284,7 @@ final class AdminOpsController extends Controller
                 'pricing' => $pricing, 'price_cents' => $price, 'price_unit' => $unit === '' ? null : mb_substr($unit, 0, 40),
                 'is_active' => empty($_POST['active'][$id]) ? 0 : 1,
                 'sort_order' => max(0, min(999, (int) ($_POST['sort'][$id] ?? $s['sort_order']))),
+                'setup_cents' => $s['plan_for'] ? Ops::cents((string) ($_POST['setup'][$id] ?? '')) : $s['setup_cents'],
             ];
         }
         if ($errors) {
@@ -291,6 +326,10 @@ final class AdminOpsController extends Controller
             $this->backWithErrors($back, $v->errors);
         }
         $data = $v->clean + ['price_cents' => $price, 'is_active' => empty($_POST['is_active']) ? 0 : 1];
+        if ($existing && $existing['plan_for']) {
+            $data['setup_cents'] = Ops::cents((string) ($_POST['setup'] ?? ''));
+            $data['includes'] = mb_substr(trim((string) ($_POST['includes'] ?? '')), 0, 3000) ?: null;
+        }
         if ($existing) {
             DB::update('services', $data, ['id' => $existing['id'], 'tenant_id' => $tid]);
             $sid = (int) $existing['id'];
@@ -393,8 +432,8 @@ final class AdminOpsController extends Controller
         }
         $company = TenantContext::current()['display_name'];
         Ops::notify((int) $u['id'], "Protect your home with $company",
-            "Hi {$u['first_name']}, thank you for helping keep our community safe. Want guaranteed armed response and monitoring for your home? Apply in a minute and we'll send you a quotation.",
-            '/account/assets/property');
+            "Hi {$u['first_name']}, thank you for helping keep our community safe. Get 24/7 armed response with a monthly plan for your home, car (tracker) or business (alarm). Pick yours in a minute and we'll send your quotation.",
+            '/account/pricelist');
         Audit::log('lead.offer_sent', 'user', $u['id']);
         flash('success', "Protection offer sent to {$u['first_name']} in the app.");
         redirect($back);

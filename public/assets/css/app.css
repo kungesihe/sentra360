@@ -229,3 +229,14 @@ a.action-card:hover { border-color: var(--brand); transform: translateY(-2px); }
 .protection-card { border-left: 4px solid var(--brand); }
 .protection-ico { flex: 0 0 auto; width: 48px; height: 48px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: color-mix(in srgb, var(--brand) 12%, transparent); color: var(--brand); font-size: 1.5rem; }
 @media print { .portal-sidebar, .navbar, footer, .home-nav, .subtabs { display: none !important; } }
+
+/* Protection plans */
+.plan-card { display: flex; flex-direction: column; background: var(--bs-body-bg); border: 1px solid var(--bs-border-color); border-radius: 14px; padding: 1rem 1.1rem; }
+.plan-ico { flex: 0 0 auto; width: 42px; height: 42px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; background: var(--brand); color: #fff; font-size: 1.3rem; }
+.plan-price { font-size: 1.05rem; }
+.plan-includes { list-style: none; padding: 0; }
+.plan-includes li { padding: 2px 0; }
+.plan-includes .bi { color: var(--brand); }
+.plan-mini { display: flex; flex-direction: column; gap: 2px; height: 100%; padding: .65rem .8rem; border: 1px dashed var(--bs-border-color); border-radius: 12px; text-decoration: none; color: inherit; }
+.plan-mini:hover { border-color: var(--brand); background: color-mix(in srgb, var(--brand) 6%, transparent); }
+.plan-mini .bi { color: var(--brand); font-size: 1.2rem; }

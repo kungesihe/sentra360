@@ -38,6 +38,7 @@ Installer::dropAll();
 Installer::migrate(fn() => null);
 Installer::seedRoles(fn() => null);
 T::$companyId = Installer::seedCompany(fn() => null);
+\App\Services\Plans::seed(T::$companyId);
 
 // Start a private web server for HTTP-level tests.
 $serverEnv = array_merge(getenv(), $env);

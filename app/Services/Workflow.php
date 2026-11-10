@@ -199,7 +199,7 @@ final class Workflow
         return (int) DB::value('SELECT COALESCE(SUM(amount_cents),0) FROM payments WHERE quotation_id = ? AND status = "paid"', [$quotationId]);
     }
 
-    /** Record a payment (admin, or a confirmed PayFast notification). */
+    /** Record a payment (admin approves a proof of payment, or records cash or EFT received). */
     public static function recordPayment(int $customerId, ?array $q, int $amountCents, string $method, ?string $providerRef, ?string $notes, ?int $recordedBy, ?int $existingPaymentId = null): int
     {
         return DB::transaction(function () use ($customerId, $q, $amountCents, $method, $providerRef, $notes, $recordedBy, $existingPaymentId) {

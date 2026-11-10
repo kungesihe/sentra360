@@ -39,6 +39,7 @@ DB::update('tenant_settings', [
     'primary_color' => '#0E5E6F', 'secondary_color' => '#0B1F2A',
     'contact_phone' => '011 555 0100', 'contact_email' => 'hello@ubuntushield.example',
     'payment_instructions' => "Bank: First National Bank\nAccount name: Ubuntu Shield Security (Pty) Ltd\nAccount number: 62000000000 (demo)\nBranch code: 250655\nReference: your quotation number",
+    'whatsapp_number' => '082 123 4567',
 ], ['tenant_id' => $tid]);
 DB::update('tenants', ['name' => 'Ubuntu Shield Security'], ['id' => $tid]);
 TenantContext::refresh();
@@ -47,7 +48,7 @@ TenantContext::refresh();
 $prop1 = DB::insert('registered_properties', ['tenant_id' => $tid, 'owner_id' => $lerato, 'name' => 'Home', 'property_type' => 'House', 'address' => '1452 Block L', 'suburb' => 'Soshanguve Block L', 'city' => 'Pretoria',
     'latitude' => -25.5181, 'longitude' => 28.1003, 'existing_security' => 'Alarm with outdoor beams, electric fence', 'access_requirements' => 'Ring at the green gate; two dogs in the yard', 'security_concerns' => 'Two break-ins in the street this month', 'protection_status' => 'active', 'activated_at' => $ago('-40 days')]);
 $veh1 = DB::insert('registered_vehicles', ['tenant_id' => $tid, 'owner_id' => $lerato, 'make' => 'Toyota', 'model' => 'Fortuner', 'registration' => 'LK 22 PS GP', 'colour' => 'White', 'year' => 2021, 'primary_driver' => 'Lerato Khumalo', 'protection_status' => 'none']);
-$prop2 = DB::insert('registered_properties', ['tenant_id' => $tid, 'owner_id' => $sipho, 'name' => 'Family home', 'property_type' => 'Townhouse', 'address' => '6630 Block H', 'suburb' => 'Soshanguve Block H', 'city' => 'Pretoria', 'existing_security' => 'Basic alarm', 'protection_status' => 'none']);
+$prop2 = DB::insert('registered_properties', ['tenant_id' => $tid, 'owner_id' => $sipho, 'name' => 'Nkosi Spaza Shop', 'property_type' => 'Business premises', 'address' => '6630 Block H', 'suburb' => 'Soshanguve Block H', 'city' => 'Pretoria', 'existing_security' => 'Basic alarm', 'protection_status' => 'none']);
 $prop3 = DB::insert('registered_properties', ['tenant_id' => $tid, 'owner_id' => $anika, 'name' => 'Apartment', 'property_type' => 'Apartment / flat', 'address' => 'Unit 12, 210 Block GG', 'suburb' => 'Soshanguve Block GG', 'city' => 'Pretoria', 'protection_status' => 'none']);
 DB::run('UPDATE users SET client_status = "client", status = "active" WHERE id IN (?, ?)', [$lerato, $anika]);
 
@@ -58,21 +59,20 @@ $mkApp = function (string $kind, int $assetId, int $applicant, array $services, 
     DB::insert('workflow_events', ['tenant_id' => $tid, 'subject_type' => $kind . '_application', 'subject_id' => $id, 'to_status' => 'submitted', 'note' => 'Application submitted.', 'created_at' => $created]);
     return $id;
 };
-$appActive = $mkApp('property', $prop1, $lerato, ['Armed response', 'Alarm monitoring'], 'active', $ago('-45 days'));
-$appVeh = $mkApp('vehicle', $veh1, $lerato, ['Vehicle tracking', 'Vehicle armed response'], 'submitted', $ago('-2 hours'));
-$appSipho = $mkApp('property', $prop2, $sipho, ['Armed response', 'CCTV installation', 'Security assessment'], 'submitted', $ago('-1 day'));
-$appAnika = $mkApp('property', $prop3, $anika, ['Armed response', 'Alarm monitoring'], 'submitted', $ago('-3 days'));
+$appActive = $mkApp('property', $prop1, $lerato, ['Home protection plan', 'Alarm monitoring'], 'active', $ago('-45 days'));
+$appVeh = $mkApp('vehicle', $veh1, $lerato, ['Vehicle tracking plan'], 'submitted', $ago('-2 hours'));
+$appSipho = $mkApp('property', $prop2, $sipho, ['Business alarm plan', 'CCTV installation'], 'submitted', $ago('-1 day'));
+$appAnika = $mkApp('property', $prop3, $anika, ['Home protection plan'], 'submitted', $ago('-3 days'));
 
 // Quotation sent to Sipho (awaiting acceptance)
 $q1 = Workflow::createQuotation('property', Workflow::application('property', $appSipho), [
-    ['description' => 'Armed response (monthly)', 'quantity' => 1, 'unit_cents' => 49900],
-    ['description' => 'CCTV: 4 cameras, NVR and installation (spread over 12 months)', 'quantity' => 1, 'unit_cents' => 62500],
-    ['description' => 'Security assessment', 'quantity' => 1, 'unit_cents' => 0],
+    ['description' => 'Business alarm plan (per month)', 'quantity' => 1, 'unit_cents' => 85000],
+    ['description' => 'Alarm supply and installation (once-off, first payment only)', 'quantity' => 1, 'unit_cents' => 350000],
+    ['description' => 'CCTV installation: 4 cameras (once-off)', 'quantity' => 1, 'unit_cents' => 750000],
 ], 'monthly', date('Y-m-d', strtotime('+14 days')), 'Includes free security assessment. 12-month agreement.', true, true, $admin);
 // Anika: quotation accepted and paid, waiting for activation
 $q2 = Workflow::createQuotation('property', Workflow::application('property', $appAnika), [
-    ['description' => 'Armed response (monthly)', 'quantity' => 1, 'unit_cents' => 45000],
-    ['description' => 'Alarm monitoring (monthly)', 'quantity' => 1, 'unit_cents' => 19900],
+    ['description' => 'Home protection plan (per month)', 'quantity' => 1, 'unit_cents' => 45000],
 ], 'monthly', date('Y-m-d', strtotime('+14 days')), null, true, true, $admin);
 Workflow::respond(Workflow::quotation($q2), true);
 Workflow::recordPayment($anika, Workflow::quotation($q2), (int) DB::value('SELECT total_cents FROM quotations WHERE id = ?', [$q2]), 'eft', 'FNB 0098123', 'First month', $admin);

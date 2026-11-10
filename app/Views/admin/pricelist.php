@@ -1,4 +1,4 @@
-<?php $groups = []; foreach ($rows as $s) { $groups[$s['category']][] = $s; }  uksort($groups, fn($a, $b) => [$a !== 'Residential', $a] <=> [$b !== 'Residential', $b]); ?>
+<?php $groups = []; foreach ($rows as $s) { $groups[$s['category']][] = $s; }  $rank = fn($c) => ['Protection plans' => 0, 'Add-ons' => 1][$c] ?? 2; uksort($groups, fn($a, $b) => [$rank($a), $a] <=> [$rank($b), $b]); ?>
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
   <p class="small text-body-secondary mb-0">Set the price of every service in one place. Homeowners see this on the <a href="/pricelist" target="_blank">price list</a> and the services page. Untick "Listed" to hide a service; nothing is deleted.</p>
   <div class="d-flex gap-2"><a href="/pricelist" target="_blank" class="btn btn-outline-dark btn-sm"><i class="bi bi-printer"></i> View / print</a><a href="/admin/services/new" class="btn btn-brand btn-sm"><i class="bi bi-plus-lg"></i> Add service</a></div>
@@ -12,7 +12,8 @@
       <tbody>
         <?php foreach ($list as $s): $id = (int) $s['id']; ?>
           <tr>
-            <td><a href="/admin/services/<?= $id ?>" class="fw-semibold"><?= e($s['name']) ?></a></td>
+            <td><a href="/admin/services/<?= $id ?>" class="fw-semibold"><?= e($s['name']) ?></a>
+              <?php if ($s['plan_for']): ?><div class="input-group input-group-sm mt-1" style="max-width:260px"><span class="input-group-text">Once-off setup R</span><input class="form-control" name="setup[<?= $id ?>]" inputmode="decimal" value="<?= $s['setup_cents'] ? e(number_format($s['setup_cents'] / 100, 2, '.', '')) : '' ?>" placeholder="none" aria-label="Setup fee for <?= e($s['name']) ?>"></div><?php endif; ?></td>
             <td><select class="form-select form-select-sm" name="pricing[<?= $id ?>]" aria-label="Pricing for <?= e($s['name']) ?>">
               <?php foreach (['fixed' => 'Fixed price', 'from' => 'From (starting price)', 'quote' => 'Quotation required'] as $k => $lbl): ?><option value="<?= $k ?>"<?= $s['pricing'] === $k ? ' selected' : '' ?>><?= $lbl ?></option><?php endforeach; ?>
             </select></td>

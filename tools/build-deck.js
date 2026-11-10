@@ -94,9 +94,9 @@ const shadow = () => ({ type: 'outer', color: '0B1F2A', blur: 8, offset: 2, angl
   s.addText('One sign-in, three areas', { placeholder: 'title' });
   caption(s, 'Everyone signs in at /login: the app recognises the account and opens the right area');
   const logins = [
-    [Bi.BiHome, 'Homeowner', '/account · residents and clients', ['Reports incidents with photos and GPS', 'Applies to protect home and vehicles', 'Books services, accepts quotations, pays', 'Big panic button with a complete profile'], C.accent1],
-    [Bi.BiBuildings, 'Admin', '/admin · the company office', ['Turns community reporters into clients (Leads)', 'Records payments and activates clients', 'Manages services, alerts and branding', 'Reports with Excel and PDF export'], C.accent6],
-    [Bi.BiShieldQuarter, 'Security company', '/security · control room and officers', ['Live control room with map and alarm', 'Acknowledges panic alerts, dispatches officers', 'Officers update en route / on scene', 'Patrol check-ins and homeowner lookup'], C.accent2],
+    [Bi.BiHome, 'Homeowner', '/account · residents and clients', ['Reports incidents with photos and GPS', 'Monthly plans: home, vehicle tracker, business alarm', 'Accepts quotations, pays by EFT, uploads proof', 'Big panic button with a complete profile'], C.accent1],
+    [Bi.BiBuildings, 'Admin', '/admin · the company office', ['Turns community reporters into clients (Leads)', 'Checks proofs of payment, activates plans', 'Manages services, alerts and branding', 'Reports with Excel and PDF export'], C.accent6],
+    [Bi.BiShieldQuarter, 'Security company', '/security · control room and officers', ['Live control room with map and alarm', 'WhatsApp call-backs, dispatches armed response', 'Officers update en route / on scene', 'Patrol check-ins and homeowner lookup'], C.accent2],
   ];
   for (let i = 0; i < 3; i++) {
     const [Ic, h, sub, bullets, col] = logins[i];
@@ -128,10 +128,10 @@ const shadow = () => ({ type: 'outer', color: '0B1F2A', blur: 8, offset: 2, angl
     sl.addNotes(notes);
   };
   await flow('From community member to paying client', 'The commercial journey the brief asks for',
-    [['Registers', 'Free homeowner account'], ['Reports or requests', 'Incident or service request'], ['Applies', 'Home or vehicle protection'], ['Company reviews', 'Assessment if needed'], ['Quotation', 'Itemised, with VAT'], ['Accepts & pays', 'EFT now, PayFast ready'], ['Active client', 'Panic button unlocked']],
+    [['Registers', 'Free homeowner account'], ['Reports or requests', 'Incident or service request'], ['Picks a plan', 'Home, vehicle or business'], ['Company confirms', 'Installation booked if needed'], ['Quotation', 'Pre-priced from the price list'], ['Accepts & pays', 'EFT + proof of payment'], ['Plan active', 'Armed response, priority']],
     C.accent1, 'Every step is visible to the homeowner on a progress bar and timeline. The Admin moves the application along from the admin portal.', Bi.BiTrendingUp);
   await flow('From panic button to resolution', 'The emergency journey, with honest status at every step',
-    [['Hold 3 seconds', 'Prevents accidental alerts'], ['Received', 'Server confirms, with reference'], ['Seen', 'Shown on the control room screen'], ['Acknowledged', 'Operator presses Acknowledge'], ['Dispatched', 'Officer assigned and on the way'], ['Resolved', 'Outcome recorded']],
+    [['Hold 3 seconds', 'Prevents accidental alerts'], ['Received', 'Server confirms, with reference'], ['Seen', 'Shown on the control room screen'], ['Call-back', 'Control room calls back on WhatsApp'], ['Dispatched', 'Armed response for plan members'], ['Resolved', 'Outcome recorded']],
     C.accent2, 'The client sees the time of each step. If it is not acknowledged within 2 minutes, the app tells them to phone the emergency line or 10111.', Bi.BiBroadcast);
 
   // -------------------------------------------------------- honest by design
@@ -140,7 +140,7 @@ const shadow = () => ({ type: 'outer', color: '0B1F2A', blur: 8, offset: 2, angl
   caption(s, 'What makes it safe to rely on, and safe to show to clients');
   const pillars = [
     [Bi.BiCheckShield, 'A report is not a dispatch', 'Statuses separate submitted, received, assigned and resolved, so nobody assumes help is coming when it is not.', C.accent1],
-    [Bi.BiMessageError, 'Nothing is faked', 'SMS, email and online payments say plainly when they are not set up. Messages are never shown as "sent" when they were not.', C.accent3],
+    [Bi.BiMessageError, 'Nothing is faked', 'SMS and email say plainly when they are not set up, and payments are only confirmed after the Admin checks the proof. Messages are never shown as "sent" when they were not.', C.accent3],
     [Bi.BiWifiOff, 'Offline warnings', 'The panic screen warns that alerts need internet. Offline, the app shows the emergency numbers instead.', C.accent2],
     [Bi.BiLockAlt, 'Privacy (POPIA)', 'Consent is recorded, contact details are masked in lists, every record view is logged, and homeowners can delete their account.', C.accent6],
   ];
@@ -165,14 +165,14 @@ const shadow = () => ({ type: 'outer', color: '0B1F2A', blur: 8, offset: 2, angl
     s.addText(stats[i][1], { x: x + 0.25, y: 3.3, w: 2.45, h: 1.0, fontSize: 15, color: C.text1, valign: 'top', margin: 0, isTextBox: true });
   }
   s.addText('Live at https://sentra360-t9tq.onrender.com', { x: 0.5, y: 4.95, w: 12.33, h: 0.5, fontSize: 18, bold: true, color: C.text1, margin: 0, isTextBox: true, hyperlink: { url: 'https://sentra360-t9tq.onrender.com' } });
-  s.addText('Not yet connected: SMS and email delivery, PayFast online payments, a custom domain. Mobile and email verification is switched off for now.', { x: 0.5, y: 5.5, w: 12.33, h: 0.7, fontSize: 15, color: C.accent5, margin: 0, isTextBox: true });
+  s.addText('Not yet connected: SMS and email delivery, a custom domain. Payments are EFT with proof of payment (no card processing, by design). Mobile and email verification is switched off for now.', { x: 0.5, y: 5.5, w: 12.33, h: 0.7, fontSize: 15, color: C.accent5, margin: 0, isTextBox: true });
 
   // ------------------------------------------------------------- screens
   const sections = {
     'Public site': [Bi.BiGlobe, 'What anyone can see, before signing in: the branded company site, services, the three sign-in pages and sign-up.'],
     Homeowner: [Bi.BiHome, 'Residents and clients: reports, the panic button, properties and vehicles, applications, quotations, bookings and their profile.'],
     'Security company': [Bi.BiShieldQuarter, 'Control room operators and response officers: the live control room, responding to incidents, assignments and patrols.'],
-    Admin: [Bi.BiBuildings, 'The company office: incidents, applications to activation, quotations and payments, services, alerts, reports, logins and branding.'],
+    Admin: [Bi.BiBuildings, 'The company office: incidents, plan requests to activation, quotations and proofs of payment, services, alerts, reports, logins and branding.'],
   };
   let current = null;
   for (const item of catalog) {
@@ -230,7 +230,7 @@ const shadow = () => ({ type: 'outer', color: '0B1F2A', blur: 8, offset: 2, angl
     [Bi.BiUserCheck, 'Play Console account', 'US$25 once. A company account needs a D-U-N-S number.'],
     [Bi.BiPackage, 'Build the app', 'At pwabuilder.com. Keep the signing key safe.'],
     [Bi.BiEnvelope, 'SMS and email provider', 'So codes and emergency-contact messages are really sent.'],
-    [Bi.BiCreditCard, 'PayFast keys', 'To switch on online card payments.'],
+    [Bi.BiCreditCard, 'Plan prices & bank details', 'Set your real monthly prices (Price list) and EFT details + WhatsApp number (Branding).'],
   ];
   for (let i = 0; i < 6; i++) {
     const [Ic, h, t] = todo[i];

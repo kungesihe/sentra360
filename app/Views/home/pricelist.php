@@ -1,16 +1,42 @@
-<?php $public = !App\Core\Auth::user(); $t = tenant(); $groups = []; foreach ($services as $s) { $groups[$s['category']][] = $s; }  uksort($groups, fn($a, $b) => [$a !== 'Residential', $a] <=> [$b !== 'Residential', $b]); ?>
+<?php
+$public = !App\Core\Auth::user();
+$t = tenant();
+$plans = App\Services\Plans::all();
+$groups = [];
+foreach ($services as $s) {
+    if (!$s['plan_for']) {
+        $groups[$s['category']][] = $s;
+    }
+}
+$rank = fn($c) => ['Add-ons' => 0][$c] ?? 1;
+uksort($groups, fn($a, $b) => [$rank($a), $a] <=> [$rank($b), $b]);
+?>
 <div class="container py-4">
   <?php if (!$public): ?><?= App\Core\View::partial('home/_nav', []) ?><?php endif; ?>
   <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
     <div>
       <h1 class="h4 mb-1">Price list</h1>
-      <p class="text-body-secondary mb-0">Services and protection from <?= e($t['display_name']) ?>. Prices exclude VAT (15%). Final prices are confirmed in your quotation.</p>
+      <p class="text-body-secondary mb-0"><?= e($t['display_name']) ?> · <?= e(area()['name']) ?> and surrounding areas. Prices exclude VAT (15%). Your quotation confirms the final price.</p>
     </div>
     <button type="button" class="btn btn-outline-dark btn-sm d-print-none" data-print><i class="bi bi-printer"></i> Print</button>
   </div>
+
+  <?php if ($plans): ?>
+    <h2 class="h5 mt-2 mb-1">Monthly protection plans</h2>
+    <p class="small text-body-secondary mb-3">Every plan includes 24/7 armed response, a priority panic button with a WhatsApp call-back, and incident reports handled first.</p>
+    <div class="row g-3 mb-4">
+      <?php foreach ($plans as $type => $plan): ?>
+        <div class="col-md-4"><?= App\Core\View::partial('shared/plan_card', ['plan' => $plan, 'cta' => [
+            $public ? '/register' : '/account/assets/' . App\Services\Plans::DEFAULTS[$type]['kind'] . '/new' . ($type === 'business' ? '?type=business' : ''),
+            $public ? 'Join and get protected' : ($type === 'vehicle' ? 'Protect my vehicle' : ($type === 'business' ? 'Protect my business' : 'Protect my home')),
+        ]]) ?></div>
+      <?php endforeach; ?>
+    </div>
+  <?php endif; ?>
+
   <?php foreach ($groups as $cat => $list): ?>
     <div class="table-card mb-3">
-      <div class="p-3 border-bottom fw-semibold"><?= e($cat) ?><?= $cat === 'Residential' ? ' <span class="badge text-bg-success ms-1">Home protection</span>' : '' ?></div>
+      <div class="p-3 border-bottom fw-semibold"><?= e($cat === 'Add-ons' ? 'Add-ons to a plan' : $cat) ?></div>
       <div class="table-responsive"><table class="table mb-0 align-middle">
         <tbody>
           <?php foreach ($list as $s): ?>
@@ -24,8 +50,4 @@
     </div>
   <?php endforeach; ?>
   <?php if (!$services): ?><div class="panel text-body-secondary">No prices are published yet.</div><?php endif; ?>
-  <div class="d-flex flex-wrap gap-2 d-print-none">
-    <a href="<?= $public ? '/register' : '/account/assets/property/new' ?>" class="btn btn-brand"><i class="bi bi-house-check"></i> Protect my home</a>
-    <a href="<?= $public ? '/services' : '/account/services' ?>" class="btn btn-outline-dark">Book a service</a>
-  </div>
 </div>

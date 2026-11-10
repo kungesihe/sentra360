@@ -122,6 +122,18 @@
     } catch (e) { /* audio not supported */ }
   }
 
+  // ------------------------------------------- plan follows the property type
+  const planSwitch = $('[data-plan-switch]');
+  if (planSwitch) {
+    const sync = () => {
+      const biz = planSwitch.value === 'Business premises';
+      $$('[data-plan-for]').forEach((el) => {
+        if (el.dataset.planFor !== 'vehicle') el.classList.toggle('d-none', (el.dataset.planFor === 'business') !== biz);
+      });
+    };
+    planSwitch.addEventListener('change', sync);
+  }
+
   // ------------------------------------------------------ panic status page
   const track = $('[data-panic-track]');
   if (track) {
@@ -136,7 +148,7 @@
         if (!r.ok) return;
         const j = await r.json();
         $('[data-panic-label]').textContent = j.label;
-        const times = { submitted: j.submitted_at, delivered: j.delivered_at, acknowledged: j.acknowledged_at, dispatched: j.dispatched_at, resolved: j.resolved_at };
+        const times = { submitted: j.submitted_at, delivered: j.delivered_at, acknowledged: j.acknowledged_at, callback: j.callback_at, dispatched: j.dispatched_at, resolved: j.resolved_at };
         $$('[data-step]').forEach((li) => {
           const at = times[li.dataset.step];
           $('[data-step-icon]', li).className = 'bi ' + (at ? 'bi-check-circle-fill text-success' : 'bi-circle text-secondary');
@@ -226,7 +238,7 @@
         let newOnes = 0;
         j.panics.forEach((p) => { if (!seen.has(p.id)) { seen.add(p.id); if (!first) newOnes++; } });
         // Only rebuild the lists when something changed, so buttons aren't replaced mid-click.
-        const sig = JSON.stringify([j.panics.map((p) => [p.id, p.status, p.latitude, p.longitude]), j.incidents.map((i) => [i.id, i.status, i.officers])]);
+        const sig = JSON.stringify([j.panics.map((p) => [p.id, p.status, p.latitude, p.longitude, p.callback_at]), j.incidents.map((i) => [i.id, i.status, i.officers])]);
         drawMap(j, sig, newOnes > 0);
         if (sig === lastSig) {
           $$('[data-age-ts]').forEach((el) => { el.textContent = `Raised ${age(el.dataset.ageTs)}`; });
@@ -240,13 +252,16 @@
           if (['acknowledged', 'dispatched'].includes(p.status)) card.classList.add('acked');
           const set = (k, v) => { $(`[data-f="${k}"]`, card).textContent = v; };
           set('reference', p.reference); set('status_label', p.status_label);
-          set('who', `${p.first_name} ${p.surname} · ${+p.is_client ? 'Client' : 'Community member (not a client)'}`);
+          set('who', `${p.first_name} ${p.surname} · ${+p.is_client ? 'Plan member' : 'Community member (no plan)'}`);
           set('where', p.property_name ? `${p.property_name}, ${p.address}, ${p.suburb}` : (p.latitude ? `GPS ${(+p.latitude).toFixed(5)}, ${(+p.longitude).toFixed(5)}${p.accuracy_m ? ' (±' + p.accuracy_m + ' m)' : ''}` : `No GPS (${p.location_status})`));
           set('extra', p.extra_info ? `“${p.extra_info}”` : '');
           set('age', `Raised ${age(p.created_at)}`);
           $('[data-f="age"]', card).dataset.ageTs = p.created_at;
           const ack = $('[data-ack]', card);
           if (['submitted', 'delivered'].includes(p.status)) { ack.action = `/security/incidents/${p.incident_id}/acknowledge`; $('[name="_csrf"]', ack).value = csrf(); } else { ack.remove(); }
+          const cb = $('[data-callback]', card);
+          cb.action = `/security/incidents/${p.incident_id}/callback`; $('[name="_csrf"]', cb).value = csrf();
+          set('callback', p.callback_at ? `Called back ${p.callback_method === 'phone' ? 'by phone' : 'on WhatsApp'} at ${p.callback_at.slice(11, 16)}` : (+p.is_client ? 'Plan member: dispatch armed response and call back' : 'Community member: call back on WhatsApp'));
           $('[data-open]', card).href = `/security/incidents/${p.incident_id}`;
           $('[data-call]', card).href = `tel:${p.mobile}`;
           panicList.appendChild(card);

@@ -10,7 +10,6 @@ use App\Core\DB;
 use App\Core\HttpException;
 use App\Core\TenantContext;
 use App\Services\Ops;
-use App\Services\PayFast;
 use App\Services\Workflow;
 
 /** Homeowner: services marketplace, service requests/bookings, quotations, payments, notifications. */
@@ -23,12 +22,13 @@ final class HomeCommerceController extends Controller
 
     public static function activeServices(): array
     {
-        return DB::all('SELECT * FROM services WHERE tenant_id = ? AND is_active = 1 ORDER BY category, sort_order, name', [TenantContext::id()]);
+        // Protection plans are signed up for from the protection list, not booked here.
+        return DB::all('SELECT * FROM services WHERE tenant_id = ? AND is_active = 1 AND plan_for IS NULL ORDER BY category, sort_order, name', [TenantContext::id()]);
     }
 
     public static function service(int $id): array
     {
-        return DB::one('SELECT * FROM services WHERE id = ? AND tenant_id = ? AND is_active = 1', [$id, TenantContext::id()]) ?? throw new HttpException(404);
+        return DB::one('SELECT * FROM services WHERE id = ? AND tenant_id = ? AND is_active = 1 AND plan_for IS NULL', [$id, TenantContext::id()]) ?? throw new HttpException(404);
     }
 
     // ---------------------------------------------------------- marketplace
@@ -139,7 +139,7 @@ final class HomeCommerceController extends Controller
             'paid' => Workflow::paidCents((int) $q['id']),
             'payments' => DB::all('SELECT * FROM payments WHERE quotation_id = ? ORDER BY id', [$q['id']]),
             'subjectLink' => Workflow::subjectLink($q['subject_type'], (int) $q['subject_id'], false),
-            'payfast' => PayFast::configured(), 'instructions' => DB::value('SELECT payment_instructions FROM tenant_settings WHERE tenant_id = ?', [TenantContext::id()]),
+            'instructions' => DB::value('SELECT payment_instructions FROM tenant_settings WHERE tenant_id = ?', [TenantContext::id()]),
         ]);
     }
 
@@ -156,49 +156,40 @@ final class HomeCommerceController extends Controller
         redirect("/account/quotations/{$q['id']}");
     }
 
-    /** Start an online payment: create a pending payment and hand the customer to PayFast. */
-    public function payOnline(string $id): void
+    /**
+     * The company does not process payments: customers pay by EFT and upload their proof of
+     * payment here. The Admin checks it against the bank statement and approves or rejects it.
+     */
+    public function uploadProof(string $id): void
     {
         $q = $this->myQuote($id);
-        if (!PayFast::configured()) {
-            throw new HttpException(400, 'Online payment is not available. Please use the payment instructions on the quotation.');
-        }
         $due = (int) $q['total_cents'] - Workflow::paidCents((int) $q['id']);
+        $back = "/account/quotations/{$q['id']}";
         if ($q['status'] !== 'accepted' || $due <= 0) {
-            throw new HttpException(400, 'Nothing to pay on this quotation.');
+            $this->backWithErrors($back, ['pop' => 'There is nothing to pay on this quotation.']);
+        }
+        $cents = Ops::cents((string) ($_POST['amount'] ?? ''));
+        if (!$cents || $cents <= 0) {
+            $this->backWithErrors($back, ['amount' => 'Enter the amount you paid, e.g. 450.00.']);
+        }
+        if (empty($_FILES['pop']['name'][0])) {
+            $this->backWithErrors($back, ['pop' => 'Attach your proof of payment (PDF or photo).']);
         }
         $u = Auth::user();
         $pid = DB::insert('payments', [
             'tenant_id' => TenantContext::id(), 'reference' => Ops::reference('PAY', 'payments'), 'customer_id' => $u['id'],
-            'quotation_id' => $q['id'], 'amount_cents' => $due, 'method' => 'payfast', 'status' => 'pending',
+            'quotation_id' => $q['id'], 'amount_cents' => $cents, 'method' => 'eft', 'status' => 'pending',
+            'provider_reference' => mb_substr(trim((string) ($_POST['bank_reference'] ?? '')), 0, 100) ?: null,
         ]);
-        $payment = DB::one('SELECT * FROM payments WHERE id = ?', [$pid]);
-        $this->view('home/payfast_redirect', ['title' => 'Redirecting to PayFast', 'action' => PayFast::processUrl(),
-            'fields' => PayFast::checkoutFields($payment, $u, "Quotation {$q['reference']}")], 'bare');
-    }
-
-    /** PayFast server-to-server notification (no session, no CSRF; verified by signature + PayFast validation). */
-    public function payfastNotify(): void
-    {
-        $post = $_POST;
-        $payment = DB::one('SELECT * FROM payments WHERE reference = ? AND tenant_id = ? AND method = "payfast"', [(string) ($post['m_payment_id'] ?? ''), TenantContext::id()]);
-        if (!$payment) {
-            http_response_code(404);
-            return;
+        $errors = Ops::storeUploads('payment', $pid, 'pop', 1, ['application/pdf', 'image/png', 'image/jpeg', 'image/webp']);
+        if (!Ops::filesFor('payment', $pid)) {
+            DB::run('DELETE FROM payments WHERE id = ?', [$pid]);
+            $this->backWithErrors($back, ['pop' => $errors[0] ?? 'The file could not be saved. Use a PDF, JPG or PNG under the size limit.']);
         }
-        $err = PayFast::verifyItn($post, (int) $payment['amount_cents']);
-        if ($err !== null) {
-            Audit::log('payment.itn_rejected', 'payment', $payment['id'], ['reason' => $err], null, 'system');
-            http_response_code(400);
-            return;
-        }
-        if (($post['payment_status'] ?? '') === 'COMPLETE' && $payment['status'] !== 'paid') {
-            $q = $payment['quotation_id'] ? DB::one('SELECT * FROM quotations WHERE id = ?', [$payment['quotation_id']]) : null;
-            Workflow::recordPayment((int) $payment['customer_id'], $q, (int) $payment['amount_cents'], 'payfast', (string) ($post['pf_payment_id'] ?? ''), null, null, (int) $payment['id']);
-        } elseif (($post['payment_status'] ?? '') === 'CANCELLED') {
-            DB::update('payments', ['status' => 'failed'], ['id' => $payment['id']]);
-        }
-        http_response_code(200);
+        Audit::log('payment.proof_uploaded', 'payment', $pid, ['amount' => $cents]);
+        Ops::notifyStaff('admin', 'Proof of payment to check', "{$u['first_name']} {$u['surname']} uploaded proof of payment of " . money_exact($cents) . " for {$q['reference']}.", '/admin/payments');
+        flash('success', 'Thank you. Your proof of payment was sent and we will confirm it shortly.');
+        redirect($back);
     }
 
     public function payments(): void
