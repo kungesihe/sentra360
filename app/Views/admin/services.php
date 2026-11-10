@@ -1,5 +1,5 @@
 <div class="d-flex justify-content-between align-items-center mb-3">
-  <p class="small text-body-secondary mb-0">These appear in the services marketplace for homeowners and on the public <a href="/services" target="_blank">services page</a>.</p>
+  <p class="small text-body-secondary mb-0">These appear in the services marketplace for homeowners and on the public <a href="/services" target="_blank">services page</a>. To change many prices at once, use the <a href="/admin/pricelist">price list</a>.</p>
   <a href="/admin/services/new" class="btn btn-brand"><i class="bi bi-plus-lg"></i> Add service</a>
 </div>
 <div class="table-card"><div class="table-responsive"><table class="table table-hover mb-0">

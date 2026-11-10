@@ -241,10 +241,10 @@ T::test('Reports and Excel exports are admin-only, and exports neutralise spread
 T::test('Smoke test: every page of all three portals loads', function () {
     $pages = [
         'homeowner' => ['/account', '/account/incidents', '/account/incidents/new', '/account/assets/property', '/account/assets/property/new',
-            '/account/assets/vehicle', '/account/assets/vehicle/new', '/account/applications', '/account/services', '/account/requests',
+            '/account/assets/vehicle', '/account/assets/vehicle/new', '/account/applications', '/account/services', '/account/pricelist', '/account/requests',
             '/account/quotations', '/account/payments', '/account/contacts', '/account/notifications', '/account/profile', '/account/panic'],
         'admin' => ['/admin', '/admin/incidents', '/admin/incidents/new', '/admin/applications', '/admin/applications?status=all', '/admin/quotations',
-            '/admin/requests', '/admin/requests?status=all', '/admin/services', '/admin/services/new', '/admin/payments', '/admin/homeowners',
+            '/admin/requests', '/admin/requests?status=all', '/admin/services', '/admin/services/new', '/admin/pricelist', '/admin/payments', '/admin/homeowners',
             '/admin/alerts', '/admin/leads', '/admin/patrols', '/admin/reports', '/admin/reports?days=365', '/admin/staff', '/admin/branding', '/admin/audit',
             '/admin/notifications', '/admin/profile'],
         'security_staff' => ['/security', '/security/feed', '/security/assignments', '/security/incidents', '/security/incidents/new',
@@ -345,4 +345,45 @@ T::test('Community members with a complete profile can press panic; they show up
     $sec->get('/security');
     $sec->post('/admin/leads/' . $member['id'] . '/offer', []);
     T::eq(403, $sec->status, 'security staff cannot send offers');
+});
+
+T::test('Price list: admin edits every price in one place; public and homeowners see it', function () {
+    $tid = T::$companyId;
+    $mk = fn(string $name, string $cat) => DB::one('SELECT * FROM services WHERE id = ?', [DB::insert('services', ['tenant_id' => $tid, 'name' => $name, 'category' => $cat, 'description' => 'Test service.', 'pricing' => 'quote'])]);
+    $armed = $mk('Armed response test', 'Residential');
+    $cctv = $mk('CCTV install test', 'Installations');
+    $before = (int) DB::value('SELECT COUNT(*) FROM services WHERE tenant_id = ?', [$tid]);
+    $admin = T::login(T::user('admin'));
+    $admin->get('/admin/pricelist');
+    T::eq(200, $admin->status, 'admin opens the price list');
+    T::contains('name="price[' . $armed['id'] . ']"', $admin->body, 'every service is editable');
+
+    $admin->post('/admin/pricelist', ['pricing' => [$armed['id'] => 'fixed', $cctv['id'] => 'from'], 'price' => [$armed['id'] => '450', $cctv['id'] => ''],
+        'unit' => [$armed['id'] => 'per month'], 'active' => [$armed['id'] => 1, $cctv['id'] => 1], 'sort' => [$armed['id'] => 1, $cctv['id'] => 2]]);
+    T::eq('quote', DB::value('SELECT pricing FROM services WHERE id = ?', [$armed['id']]), 'a missing price rejects the whole save');
+
+    $admin->get('/admin/pricelist');
+    $admin->post('/admin/pricelist', ['pricing' => [$armed['id'] => 'fixed', $cctv['id'] => 'from'], 'price' => [$armed['id'] => '450', $cctv['id'] => 'R 3 500,00'],
+        'unit' => [$armed['id'] => 'per month', $cctv['id'] => 'once-off'], 'active' => [$armed['id'] => 1], 'sort' => [$armed['id'] => 1, $cctv['id'] => 2]]);
+    T::eq(45000, (int) DB::value('SELECT price_cents FROM services WHERE id = ?', [$armed['id']]), 'armed response priced');
+    T::eq(350000, (int) DB::value('SELECT price_cents FROM services WHERE id = ?', [$cctv['id']]), 'CCTV priced from R3 500');
+    T::eq(0, (int) DB::value('SELECT is_active FROM services WHERE id = ?', [$cctv['id']]), 'unticked service hidden');
+    T::eq($before, (int) DB::value('SELECT COUNT(*) FROM services WHERE tenant_id = ?', [$tid]), 'no service was deleted');
+
+    $pub = new Http(T::HOST);
+    $pub->get('/pricelist');
+    T::contains('R450.00', $pub->body, 'public price list shows the new price');
+    T::notContains('CCTV install test', $pub->body, 'hidden service not listed publicly');
+
+    $home = T::user('homeowner');
+    $h = T::login($home);
+    $h->get('/account');
+    T::contains('My protection list', $h->body, 'dashboard shows the protection list');
+    T::contains('Home protection from', $h->body, 'with the starting price');
+    T::completeProfile($home);
+    $h->get('/account');
+    T::contains('Add protection', $h->body, 'unprotected home gets an "Add protection" button');
+    $h->post('/admin/pricelist', ['pricing' => [$armed['id'] => 'fixed'], 'price' => [$armed['id'] => '1']]);
+    T::eq(403, $h->status, 'homeowners cannot change prices');
+    DB::run('DELETE FROM services WHERE id IN (?, ?)', [$armed['id'], $cctv['id']]);
 });

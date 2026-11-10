@@ -50,17 +50,58 @@
       <?php endif; ?>
     </div>
     <div class="col-lg-8">
-      <div class="row g-3">
-        <?php foreach ([
-          ['/account/incidents', 'megaphone', 'Incident reports', $counts['incidents']],
-          ['/account/applications', 'house-check', 'Applications', $counts['applications']],
-          ['/account/quotations', 'file-earmark-text', 'Quotations to review', $counts['quotations']],
-          ['/account/requests', 'calendar-check', 'Open bookings', $counts['bookings']],
-        ] as [$href, $ico, $label, $n]): ?>
-          <div class="col-6"><a href="<?= $href ?>" class="stat d-block text-decoration-none text-body"><div class="label"><i class="bi bi-<?= $ico ?>"></i> <?= $label ?></div><div class="value"><?= (int) $n ?></div></a></div>
-        <?php endforeach; ?>
+      <?php
+      $protected = array_filter($assets, fn($a) => $a['protection_status'] === 'active');
+      $unprotected = array_filter($assets, fn($a) => $a['protection_status'] !== 'active');
+      ?>
+      <div class="panel protection-card h-100">
+        <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+          <div class="d-flex gap-3">
+            <span class="protection-ico"><i class="bi bi-shield-check"></i></span>
+            <div>
+              <h2 class="h5 mb-1">My protection list</h2>
+              <p class="small text-body-secondary mb-0">
+                <?php if (!$assets): ?>Add your home and vehicles so <?= e($t['display_name']) ?> knows exactly what to protect. Adding them is free; you decide later whether to take a plan.
+                <?php elseif (!$protected): ?>Nothing on your list is protected yet. Apply for armed response and monitoring, and we'll send you a quotation.
+                <?php else: ?><?= count($protected) ?> of <?= count($assets) ?> protected.<?= $unprotected ? ' Add protection to the rest for full peace of mind.' : ' Everything on your list is covered.' ?>
+                <?php endif; ?>
+                <?php if ($protectionFrom): ?><br>Home protection from <strong><?= money_exact((int) $protectionFrom['price_cents']) ?></strong> <?= e($protectionFrom['price_unit'] ?? '') ?>.<?php endif; ?>
+              </p>
+            </div>
+          </div>
+          <div class="d-flex flex-wrap gap-2">
+            <a href="/account/assets/property/new" class="btn btn-brand btn-sm"><i class="bi bi-house-add"></i> Add a home</a>
+            <a href="/account/assets/vehicle/new" class="btn btn-outline-dark btn-sm"><i class="bi bi-car-front"></i> Add a vehicle</a>
+            <a href="/account/pricelist" class="btn btn-link btn-sm">Price list</a>
+          </div>
+        </div>
+        <?php if ($assets): ?>
+          <ul class="list-unstyled mb-0 mt-3 border-top pt-2">
+            <?php foreach ($assets as $a):
+              $active = $a['protection_status'] === 'active';
+              $inProgress = !$active && $a['app_status'] && !in_array($a['app_status'], ['rejected', 'cancelled', 'active'], true); ?>
+              <li class="d-flex flex-wrap justify-content-between align-items-center gap-2 py-2 border-bottom">
+                <span><i class="bi bi-<?= $a['kind'] === 'property' ? 'house' : 'car-front' ?> me-1"></i><?= e($a['label']) ?></span>
+                <?php if ($active): ?><span class="badge text-bg-success"><i class="bi bi-shield-check"></i> Protected</span>
+                <?php elseif ($inProgress): ?><a href="/account/applications" class="badge text-bg-info text-decoration-none">Application: <?= e(App\Services\Ops::label($a['app_status'])) ?></a>
+                <?php else: ?><a href="/account/assets/<?= $a['kind'] ?>" class="btn btn-sm btn-warning">Add protection</a><?php endif; ?>
+              </li>
+            <?php endforeach; ?>
+          </ul>
+        <?php endif; ?>
       </div>
     </div>
+  </div>
+
+  <div class="row g-3 mb-4">
+    <?php foreach ([
+      ['/account/incidents', 'megaphone', 'Incident reports', $counts['incidents']],
+      ['/account/applications', 'house-check', 'Applications', $counts['applications']],
+      ['/account/quotations', 'file-earmark-text', 'Quotations to review', $counts['quotations']],
+      ['/account/requests', 'calendar-check', 'Open bookings', $counts['bookings']],
+    ] as [$href, $ico, $label, $n]): ?>
+      <div class="col-6 col-lg-3"><a href="<?= $href ?>" class="stat d-block text-decoration-none text-body"><div class="label"><i class="bi bi-<?= $ico ?>"></i> <?= $label ?></div><div class="value"><?= (int) $n ?></div></a></div>
+    <?php endforeach; ?>
   </div>
 
   <h2 class="h5 mb-3">Quick actions</h2>

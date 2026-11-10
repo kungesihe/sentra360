@@ -38,6 +38,12 @@ final class HomeCommerceController extends Controller
         $this->render('services', ['title' => 'Services', 'services' => self::activeServices()]);
     }
 
+    /** Printable price list of every listed service (public and inside the app). */
+    public function pricelist(): void
+    {
+        $this->render('pricelist', ['title' => 'Price list', 'services' => self::activeServices()]);
+    }
+
     public function serviceShow(string $id): void
     {
         $s = self::service((int) $id);

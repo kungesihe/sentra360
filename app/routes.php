@@ -32,6 +32,7 @@ $router->get('/delete-account', [AccountController::class, 'deletionInfo']);
 $router->post('/delete-account', [AccountController::class, 'deletionRequest']);
 $router->get('/.well-known/assetlinks.json', [PublicController::class, 'assetLinks']);
 $router->get('/services', [HomeCommerceController::class, 'services']);
+$router->get('/pricelist', [HomeCommerceController::class, 'pricelist']);
 $router->get('/services/{id}', [HomeCommerceController::class, 'serviceShow']);
 $router->get('/files/{id}', [FilesController::class, 'show']);
 $router->postExternal('/payments/payfast/notify', [HomeCommerceController::class, 'payfastNotify']);
@@ -91,6 +92,7 @@ $router->post('/account/applications/{kind}/{id}/note', [HomeAssetsController::c
 $router->post('/account/applications/{kind}/{id}/cancel', [HomeAssetsController::class, 'applicationCancel'], $home);
 
 $router->get('/account/services', [HomeCommerceController::class, 'services'], $home);
+$router->get('/account/pricelist', [HomeCommerceController::class, 'pricelist'], $home);
 $router->get('/account/services/{id}', [HomeCommerceController::class, 'serviceShow'], $home);
 $router->post('/account/services/{id}/request', [HomeCommerceController::class, 'requestStore'], $home);
 $router->get('/account/requests', [HomeCommerceController::class, 'requests'], $home);
@@ -140,6 +142,8 @@ $router->post('/admin/quotations/{id}/action', [AdminOpsController::class, 'quot
 $router->post('/admin/quotations/{id}/payment', [AdminOpsController::class, 'paymentStore'], $admin);
 $router->get('/admin/payments', [AdminOpsController::class, 'payments'], $admin);
 $router->get('/admin/services', [AdminOpsController::class, 'services'], $admin);
+$router->get('/admin/pricelist', [AdminOpsController::class, 'pricelist'], $admin);
+$router->post('/admin/pricelist', [AdminOpsController::class, 'pricelistSave'], $admin);
 $router->get('/admin/services/new', [AdminOpsController::class, 'serviceForm'], $admin);
 $router->post('/admin/services/new', [AdminOpsController::class, 'serviceSave'], $admin);
 $router->get('/admin/services/{id}', [AdminOpsController::class, 'serviceForm'], $admin);

@@ -224,3 +224,8 @@ a.action-card:hover { border-color: var(--brand); transform: translateY(-2px); }
 .panic-btn { width: 300px; height: 300px; font-size: 2.3rem; }
 .panic-btn small { font-size: 1rem; }
 @media (max-width: 575.98px) { .panic-btn { width: 260px; height: 260px; font-size: 2rem; } }
+
+/* Homeowner protection list */
+.protection-card { border-left: 4px solid var(--brand); }
+.protection-ico { flex: 0 0 auto; width: 48px; height: 48px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: color-mix(in srgb, var(--brand) 12%, transparent); color: var(--brand); font-size: 1.5rem; }
+@media print { .portal-sidebar, .navbar, footer, .home-nav, .subtabs { display: none !important; } }

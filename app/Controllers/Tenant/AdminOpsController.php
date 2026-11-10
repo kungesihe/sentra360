@@ -214,6 +214,56 @@ final class AdminOpsController extends Controller
         $this->render('services', ['title' => 'Services', 'rows' => $rows]);
     }
 
+    /** One screen to manage the prices of every service (nothing is deleted here). */
+    public function pricelist(): void
+    {
+        $rows = DB::all('SELECT * FROM services WHERE tenant_id = ? ORDER BY category, sort_order, name', [TenantContext::id()]);
+        $this->render('pricelist', ['title' => 'Price list', 'rows' => $rows]);
+    }
+
+    public function pricelistSave(): void
+    {
+        $tid = TenantContext::id();
+        $rows = DB::all('SELECT * FROM services WHERE tenant_id = ?', [$tid]);
+        $updates = [];
+        $errors = [];
+        foreach ($rows as $s) {
+            $id = (int) $s['id'];
+            if (!isset($_POST['pricing'][$id])) {
+                continue; // not on the submitted form: leave unchanged
+            }
+            $pricing = (string) $_POST['pricing'][$id];
+            if (!in_array($pricing, ['fixed', 'from', 'quote'], true)) {
+                $errors[] = "{$s['name']}: unknown pricing type.";
+                continue;
+            }
+            $price = null;
+            if ($pricing !== 'quote') {
+                $price = Ops::cents((string) ($_POST['price'][$id] ?? ''));
+                if ($price === null || $price <= 0) {
+                    $errors[] = "{$s['name']}: enter a price like 450.00, or choose \"Quotation required\".";
+                    continue;
+                }
+            }
+            $unit = trim((string) ($_POST['unit'][$id] ?? ''));
+            $updates[$id] = [
+                'pricing' => $pricing, 'price_cents' => $price, 'price_unit' => $unit === '' ? null : mb_substr($unit, 0, 40),
+                'is_active' => empty($_POST['active'][$id]) ? 0 : 1,
+                'sort_order' => max(0, min(999, (int) ($_POST['sort'][$id] ?? $s['sort_order']))),
+            ];
+        }
+        if ($errors) {
+            flash('danger', 'Nothing was saved. ' . implode(' ', $errors));
+            redirect('/admin/pricelist');
+        }
+        foreach ($updates as $id => $data) {
+            DB::update('services', $data, ['id' => $id, 'tenant_id' => $tid]);
+        }
+        Audit::log('services.pricelist_saved', 'service', null, ['count' => count($updates)]);
+        flash('success', 'Price list saved (' . count($updates) . ' services).');
+        redirect('/admin/pricelist');
+    }
+
     public function serviceForm(string $id = 'new'): void
     {
         $s = $id === 'new' ? null : (DB::one('SELECT * FROM services WHERE id = ? AND tenant_id = ?', [(int) $id, TenantContext::id()]) ?? throw new HttpException(404));
