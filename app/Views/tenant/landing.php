@@ -8,7 +8,7 @@ $home = $u ? App\Core\Auth::PORTALS[$u['portal']][2] : null;
 <section class="hero-community">
   <div class="container">
     <div class="hero-inner">
-      <span class="hero-kicker"><i class="bi bi-people-fill"></i> <?= e($t['display_name']) ?> community</span>
+      <span class="hero-kicker"><i class="bi bi-geo-alt-fill"></i> <?= e(area()['name']) ?> community · <?= e($t['display_name']) ?></span>
       <h1>Safer streets start<br>with neighbours.</h1>
       <p class="lead"><?= e($t['welcome_message'] ?: 'Report what you see, look out for each other, and reach us when it matters.') ?></p>
       <div class="d-flex flex-wrap gap-2 mt-4">

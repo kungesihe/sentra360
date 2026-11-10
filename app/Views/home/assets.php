@@ -31,6 +31,7 @@
               </form>
             </details>
           <?php endif; ?>
+          <a href="/account/assets/<?= $kind ?>/<?= (int) $a['id'] ?>/edit" class="btn btn-sm btn-link px-0 mt-1"><i class="bi bi-pencil"></i> Edit details</a>
         </div>
       </div>
     <?php endforeach; ?>

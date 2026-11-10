@@ -193,7 +193,7 @@
     soundToggle.addEventListener('change', () => { try { localStorage.setItem('sentra-sound', soundToggle.checked ? '1' : '0'); } catch (e) { /* ignore */ } if (soundToggle.checked) beep(1, 660); });
     let map = null, layer = null, fitted = false, L = null;
     whenLeaflet((lib) => {
-      L = lib; map = L.map(feedMap).setView([-26.1, 28.05], 11); tiles(map); layer = L.layerGroup().addTo(map);
+      L = lib; map = L.map(feedMap).setView([+(feedMap.dataset.lat || -25.523), +(feedMap.dataset.lng || 28.099)], 12); tiles(map); layer = L.layerGroup().addTo(map);
       if (lastData) drawMap(lastData, 'redraw', true);
     });
     const seen = new Set();

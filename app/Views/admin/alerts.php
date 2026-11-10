@@ -4,7 +4,7 @@
       <?= csrf_field() ?>
       <h2 class="h6">Publish a community safety alert</h2>
       <p class="small text-body-secondary">Shown on the public home page and every homeowner's dashboard until it expires.</p>
-      <div class="mb-2"><label class="form-label" for="title">Title</label><input class="form-control" id="title" name="title" required maxlength="150" value="<?= old('title') ?>" placeholder="e.g. Suspicious vehicle in Rivonia"></div>
+      <div class="mb-2"><label class="form-label" for="title">Title</label><input class="form-control" id="title" name="title" required maxlength="150" value="<?= old('title') ?>" placeholder="e.g. Suspicious vehicle in <?= e(area()['suburb_example']) ?>"></div>
       <div class="mb-2"><label class="form-label" for="body">Message</label><textarea class="form-control" id="body" name="body" rows="4" required><?= old('body') ?></textarea></div>
       <div class="row g-2 mb-3">
         <div class="col-6"><label class="form-label" for="level">Level</label><select class="form-select" id="level" name="level"><option value="info">Information</option><option value="warning">Warning</option><option value="urgent">Urgent</option></select></div>

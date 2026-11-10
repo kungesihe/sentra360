@@ -25,7 +25,7 @@
       <div class="col-12">
         <label class="form-label" for="location_text">Where? (address or landmark)</label>
         <div class="input-group">
-          <input class="form-control" id="location_text" name="location_text" required maxlength="255" value="<?= old('location_text') ?>" placeholder="e.g. Corner of Rivonia Rd & 5th Ave, Sandton">
+          <input class="form-control" id="location_text" name="location_text" required maxlength="255" value="<?= old('location_text') ?>" placeholder="e.g. <?= e(area()['suburb_example']) ?>, near the taxi rank">
           <button class="btn btn-outline-secondary" type="button" data-geo-fill data-geo-status="geo-status"><i class="bi bi-crosshair"></i> Use my location</button>
         </div>
         <input type="hidden" name="latitude" id="latitude" value="<?= old('latitude') ?>"><input type="hidden" name="longitude" id="longitude" value="<?= old('longitude') ?>">

@@ -9,6 +9,7 @@ All settings live in `.env`.
 | `APP_URL` | The address people open, e.g. `https://app.yourcompany.co.za`. Used in email links. |
 | `APP_KEY` | Secret used to protect verification codes and links. Long and random. |
 | `COMPANY_*` | Name, phone, email, emergency number, PSIRA number and colours. **Used only on first install**; after that, change them in Admin → *Branding & profile*. |
+| `COMPANY_AREA`, `COMPANY_CITY`, `MAP_CENTER` | The home area (default **Soshanguve**, Pretoria, map centre `-25.5230,28.0990`). Sets where the control-room map starts, the default city on address forms, example addresses and the "Soshanguve community" line on the home page. Read on every request. |
 | `ADMIN_EMAIL`, `ADMIN_MOBILE`, `ADMIN_PASSWORD` | First Admin login, created on first install. |
 | `DB_*` | Database connection. |
 | `MAIL_PROVIDER`, `MAIL_FROM` | Email delivery. Empty means **not configured**; see [INTEGRATIONS.md](INTEGRATIONS.md). |

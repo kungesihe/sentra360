@@ -23,8 +23,9 @@ const users = {
 
 // [section, user, path, title, explanation, phone?]
 const P = [
-  ['Public site', 'public', '/', 'Community home page', 'A simple, community-first welcome: "Safer streets start with neighbours", live safety alerts, the 24/7 emergency number and three steps to join.', true],
+  ['Public site', 'public', '/', 'Community home page', 'A simple, community-first welcome for Soshanguve: "Safer streets start with neighbours", live safety alerts, the 24/7 emergency number and three steps to join.', true],
   ['Public site', 'public', '/services', 'Services marketplace (public)', 'Anyone can browse the security services on offer, with prices or "quotation required". Booking needs a free account.', true],
+  ['Public site', 'public', '/pricelist', 'Price list', 'Every listed service with its price, home protection first. Printable, and also inside the app under Services.', true],
   ['Public site', 'public', '/login', 'One sign-in for everyone', 'Residents, the company office and security officers all sign in here. The app recognises the account and opens the right area automatically.', true],
   ['Public site', 'public', '/register', 'Create a homeowner account', 'Residents join for free with name, mobile, email and password, and give POPIA consent. Accounts are active immediately (verification is switched off for now).', true],
   ['Public site', 'public', '/privacy', 'Privacy policy', 'POPIA-aligned privacy notice in the company\'s name. The Admin can replace it with their own policy.', false],
@@ -63,6 +64,7 @@ const P = [
   ['Admin', 'admin', `/admin/quotations/${ids.quote_anika}`, 'Quotation & payments', 'The printable quotation, its status, and recording EFT, cash or card payments against it.', false],
   ['Admin', 'admin', '/admin/requests', 'Service requests & bookings', 'Incoming bookings by date, to review, quote, confirm and complete.', false],
   ['Admin', 'admin', '/admin/services', 'Services', 'The company manages its services marketplace: prices, availability, area and photos.', false],
+  ['Admin', 'admin', '/admin/pricelist', 'Price list management', 'Set the pricing type, price, unit, order and visibility of every service on one screen. Nothing is deleted; untick Listed to hide a service.', false],
   ['Admin', 'admin', '/admin/payments', 'Payments', 'All payments with Excel export. PayFast online payment switches on once merchant keys are added.', false],
   ['Admin', 'admin', '/admin/homeowners', 'Homeowners', 'All homeowners with status and client type. Verify, suspend or mark as client from each record.', false],
   ['Admin', 'admin', '/admin/leads', 'Leads', 'Community members who reported incidents or pressed panic but are not clients yet. One click sends a protection offer into their app (at most once every 14 days).', false],

@@ -121,7 +121,7 @@ final class Installer
         foreach ($list as $i => [$name, $cat, $desc, $unit]) {
             DB::insert('services', [
                 'tenant_id' => $tenantId, 'name' => $name, 'category' => $cat, 'description' => $desc,
-                'pricing' => 'quote', 'price_unit' => $unit, 'service_area' => 'Our coverage area',
+                'pricing' => 'quote', 'price_unit' => $unit, 'service_area' => area()['name'] . ' and surrounding areas',
                 'availability_text' => 'Book at least 48 hours ahead', 'sort_order' => $i,
             ]);
         }

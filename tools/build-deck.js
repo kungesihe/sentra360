@@ -84,7 +84,7 @@ const shadow = () => ({ type: 'outer', color: '0B1F2A', blur: 8, offset: 2, angl
   pres.addSection({ title: 'Introduction' });
   let s = pres.addSlide({ masterName: 'Title', sectionTitle: 'Introduction' });
   s.addText('SENTRA 360', { placeholder: 'title' });
-  s.addText('Security management, community safety and emergency response app: every screen, explained', { placeholder: 'body' });
+  s.addText('Community safety, security management and emergency response for Soshanguve: every screen, explained', { placeholder: 'body' });
   s.addImage({ data: await icon(Bi.BiShieldQuarter, 'FFFFFF'), x: 0.8, y: 1.0, w: 1.0, h: 1.0, altText: 'Shield icon' });
   s.addText(`Prepared ${new Date().toLocaleDateString('en-ZA', { day: 'numeric', month: 'long', year: 'numeric' })} · screenshots from the demo company "Ubuntu Shield Security" (sample data)`, { x: 0.8, y: 6.5, w: 11.7, h: 0.4, fontSize: 12, color: '94A3B8', margin: 0, isTextBox: true });
   s.addNotes('SENTRA 360 is one app for one private security company, with one sign-in page that opens the right area for homeowners, the office and security. The screenshots use sample data from a fictional demo company.');

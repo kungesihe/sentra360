@@ -13,7 +13,7 @@
     <div data-incident-list class="list-group"></div>
   </div>
   <div class="col-xl-7">
-    <div class="map-box map-tall" data-feed-map></div>
+    <div class="map-box map-tall" data-feed-map data-lat="<?= e((string) area()['lat']) ?>" data-lng="<?= e((string) area()['lng']) ?>"></div>
     <p class="small text-body-secondary mt-2">Map shows alerts and incidents with GPS. Red = panic, orange = high priority, blue = other. Map © OpenStreetMap contributors.</p>
     <div class="panel small"><i class="bi bi-person-walking"></i> You have <strong data-my-count>0</strong> open assignment(s). <a href="/security/assignments">View</a></div>
   </div>

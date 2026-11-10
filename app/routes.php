@@ -85,6 +85,8 @@ $router->post('/account/contacts/{id}/delete', [HomeIncidentsController::class, 
 $router->get('/account/assets/{kind}', [HomeAssetsController::class, 'index'], $home);
 $router->get('/account/assets/{kind}/new', [HomeAssetsController::class, 'create'], $home);
 $router->post('/account/assets/{kind}', [HomeAssetsController::class, 'store'], $home);
+$router->get('/account/assets/{kind}/{id}/edit', [HomeAssetsController::class, 'edit'], $home);
+$router->post('/account/assets/{kind}/{id}', [HomeAssetsController::class, 'update'], $home);
 $router->post('/account/assets/{kind}/{id}/apply', [HomeAssetsController::class, 'apply'], $home);
 $router->get('/account/applications', [HomeAssetsController::class, 'applications'], $home);
 $router->get('/account/applications/{kind}/{id}', [HomeAssetsController::class, 'application'], $home);

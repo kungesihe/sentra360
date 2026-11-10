@@ -4,8 +4,8 @@
  * - When offline, shows /offline.html, which says plainly that alerts and
  *   reports cannot be sent and gives the emergency numbers.
  */
-const CACHE = 'sentra-static-v9';
-const STATIC = ['/offline.html', '/assets/css/app.css?v=6', '/assets/js/app.js?v=7', '/assets/icons/icon-192.png', '/favicon.svg'];
+const CACHE = 'sentra-static-v10';
+const STATIC = ['/offline.html', '/assets/css/app.css?v=6', '/assets/js/app.js?v=8', '/assets/icons/icon-192.png', '/favicon.svg'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(STATIC)).then(() => self.skipWaiting()));

@@ -387,3 +387,33 @@ T::test('Price list: admin edits every price in one place; public and homeowners
     T::eq(403, $h->status, 'homeowners cannot change prices');
     DB::run('DELETE FROM services WHERE id IN (?, ?)', [$armed['id'], $cctv['id']]);
 });
+
+T::test('Soshanguve area: landing, control room map and address defaults; owners can edit their home', function () {
+    $pub = new Http(T::HOST);
+    $pub->get('/');
+    T::contains('Soshanguve community', $pub->body, 'landing page names the community');
+    $s = T::login(T::user('security_staff'));
+    $s->get('/security');
+    T::contains('data-lat="-25.523"', $s->body, 'control room map starts over Soshanguve');
+
+    $home = T::user('homeowner');
+    $h = T::login($home);
+    $h->get('/account/assets/property/new');
+    T::contains('value="Pretoria"', $h->body, 'city defaults to Pretoria');
+    T::contains('Soshanguve Block H', $h->body, 'suburb example is in Soshanguve');
+    T::completeProfile($home);
+    $pid = (int) DB::value('SELECT id FROM registered_properties WHERE owner_id = ?', [$home['id']]);
+    $h->get("/account/assets/property/$pid/edit");
+    T::contains('value="1 Test St"', $h->body, 'edit form is filled in');
+    $h->post("/account/assets/property/$pid", ['name' => 'Home', 'property_type' => 'House', 'address' => '1452 Block L', 'suburb' => 'Soshanguve Block L', 'city' => 'Pretoria']);
+    T::redirectsTo('/account/assets/property', $h, 'saved');
+    T::eq('Soshanguve Block L', DB::value('SELECT suburb FROM registered_properties WHERE id = ?', [$pid]), 'address updated');
+
+    $other = T::login(T::user('homeowner'));
+    $other->get("/account/assets/property/$pid/edit");
+    T::eq(404, $other->status, 'cannot open someone else\'s property');
+    $other->get('/account');
+    $other->post("/account/assets/property/$pid", ['name' => 'X', 'property_type' => 'House', 'address' => 'x', 'suburb' => 'x', 'city' => 'x']);
+    T::eq(404, $other->status, 'cannot change someone else\'s property');
+    T::eq('1452 Block L', DB::value('SELECT address FROM registered_properties WHERE id = ?', [$pid]), 'unchanged');
+});

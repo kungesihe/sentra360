@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Controllers\Tenant;
 
 use App\Controllers\Controller;
+use App\Core\Audit;
 use App\Core\Auth;
 use App\Core\DB;
 use App\Core\HttpException;
@@ -57,6 +58,69 @@ final class HomeAssetsController extends Controller
             'title' => $kind === 'property' ? 'Register a property' : 'Register a vehicle', 'kind' => $kind,
             'serviceOptions' => self::serviceOptions($kind), 'types' => self::PROPERTY_TYPES,
         ]);
+    }
+
+    private function ownAsset(string $kind, string $id): array
+    {
+        [, $assetTable] = Workflow::kind($kind);
+        return DB::one("SELECT * FROM `$assetTable` WHERE id = ? AND tenant_id = ? AND owner_id = ?", [(int) $id, TenantContext::id(), Auth::user()['id']])
+            ?? throw new HttpException(404);
+    }
+
+    public function edit(string $kind, string $id): void
+    {
+        $kind = $this->kindOr404($kind);
+        $this->render('asset_form', [
+            'title' => $kind === 'property' ? 'Edit property' : 'Edit vehicle', 'kind' => $kind, 'asset' => $this->ownAsset($kind, $id),
+            'serviceOptions' => self::serviceOptions($kind), 'types' => self::PROPERTY_TYPES,
+        ]);
+    }
+
+    /** Owners can correct their own property / vehicle details (e.g. a wrong address). */
+    public function update(string $kind, string $id): void
+    {
+        $kind = $this->kindOr404($kind);
+        $asset = $this->ownAsset($kind, $id);
+        [, $assetTable] = Workflow::kind($kind);
+        $back = "/account/assets/$kind/{$asset['id']}/edit";
+        if ($kind === 'property') {
+            $v = $this->validate([
+                'name' => 'required,max:120', 'property_type' => 'required,max:40', 'address' => 'required,max:255',
+                'suburb' => 'required,max:100', 'city' => 'required,max:100', 'existing_security' => 'max:2000',
+                'access_requirements' => 'max:2000', 'security_concerns' => 'max:2000', 'additional_info' => 'max:2000',
+            ]);
+        } else {
+            $v = $this->validate([
+                'make' => 'required,max:60', 'model' => 'required,max:60', 'registration' => 'required,max:20',
+                'colour' => 'required,max:40', 'year' => 'max:4', 'vin' => 'max:30', 'primary_driver' => 'max:120', 'additional_info' => 'max:2000',
+            ]);
+            if ($v->clean['year'] !== null && (!ctype_digit($v->clean['year']) || (int) $v->clean['year'] < 1950 || (int) $v->clean['year'] > (int) date('Y') + 1)) {
+                $v->addError('year', 'Enter a valid year, e.g. 2019.');
+            }
+        }
+        if ($v->fails()) {
+            $this->backWithErrors($back, $v->errors);
+        }
+        $data = $v->clean;
+        if ($kind === 'property') {
+            [$lat, $lng] = HomeIncidentsController::coords();
+            if ($lat !== null) {
+                [$data['latitude'], $data['longitude']] = [$lat, $lng];
+            } elseif ($data['address'] !== $asset['address'] || $data['suburb'] !== $asset['suburb']) {
+                [$data['latitude'], $data['longitude']] = [null, null]; // old GPS no longer matches the new address
+            }
+        } else {
+            $data['registration'] = strtoupper(preg_replace('/\s+/', ' ', $data['registration']));
+            $data['year'] = $data['year'] !== null ? (int) $data['year'] : null;
+        }
+        DB::update($assetTable, $data, ['id' => $asset['id'], 'tenant_id' => TenantContext::id()]);
+        Audit::log($kind . '.updated', $kind, $asset['id']);
+        if ($asset['protection_status'] === 'active') {
+            $u = Auth::user();
+            Ops::notifyStaff('admin', 'Protected ' . $kind . ' details changed', "{$u['first_name']} {$u['surname']} updated the details of a protected $kind.", "/admin/homeowners/{$u['id']}");
+        }
+        flash('success', 'Details saved.');
+        redirect("/account/assets/$kind");
     }
 
     public function store(string $kind): void

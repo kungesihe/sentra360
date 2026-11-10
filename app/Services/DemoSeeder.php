@@ -25,7 +25,7 @@ final class DemoSeeder
             'services_offered' => "Armed response\nAlarm monitoring\nSecurity patrols\nCCTV installation\nElectric fencing\nSecurity assessments",
             'emergency_phone' => '0860 000 111',
             'emergency_notes' => 'In a life-threatening emergency, also call SAPS on 10111 or ambulance/fire on 10177.',
-            'physical_address' => '12 Demo Street, Sandton, Johannesburg',
+            'physical_address' => '12 Demo Street, Soshanguve, Pretoria',
         ], ['tenant_id' => $tenantId]);
 
         $accounts = [

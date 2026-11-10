@@ -217,3 +217,23 @@ function status_badge(string $status): string
     $cls = $map[$status] ?? 'secondary';
     return '<span class="badge text-bg-' . $cls . '">' . e(str_replace('_', ' ', $status)) . '</span>';
 }
+
+/**
+ * The company's home area: used for the map's starting view, address defaults and wording.
+ * Set COMPANY_AREA / COMPANY_CITY / MAP_CENTER in .env to move the app to another area.
+ */
+function area(): array
+{
+    static $a = null;
+    if ($a === null) {
+        $name = env('COMPANY_AREA', 'Soshanguve');
+        [$lat, $lng] = array_map('floatval', explode(',', (string) env('MAP_CENTER', '-25.5230,28.0990')) + [1 => '28.0990']);
+        $a = [
+            'name' => $name,
+            'city' => env('COMPANY_CITY', 'Pretoria'),
+            'suburb_example' => env('COMPANY_SUBURB_EXAMPLE', $name . ' Block H'),
+            'lat' => $lat, 'lng' => $lng,
+        ];
+    }
+    return $a;
+}
