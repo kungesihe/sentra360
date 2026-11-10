@@ -3,7 +3,7 @@
 <meta name="csrf-token" content="<?= e(App\Core\Csrf::token()) ?>">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="manifest" href="/manifest.webmanifest">
-<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<link rel="apple-touch-icon" href="/assets/icons/icon-192.png">
 <meta name="theme-color" content="<?= e(preg_match('/^#[0-9A-Fa-f]{6}$/', (string) (tenant()['secondary_color'] ?? '')) ? tenant()['secondary_color'] : '#111827') ?>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

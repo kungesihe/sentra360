@@ -270,7 +270,7 @@ T::test('Play Store readiness: manifest, service worker, asset links, account de
     T::true(count(array_filter($m['icons'], fn($i) => $i['sizes'] === '512x512')) >= 2, '512px icon and maskable icon');
     $c->get('/sw.js');
     T::eq(200, $c->status, 'service worker served');
-    $c->get('/icons/icon-512.png');
+    $c->get('/assets/icons/icon-512.png');
     T::eq(200, $c->status, 'icon served');
     $c->get('/.well-known/assetlinks.json');
     T::eq('[]', trim($c->body), 'asset links empty until the Android app fingerprint is configured');

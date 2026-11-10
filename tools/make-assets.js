@@ -7,7 +7,7 @@ const puppeteer = require('puppeteer-core');
 const EDGE = 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe';
 const [name = 'SENTRA 360 Security', primary = '#0B3D91', dark = '#111827'] = process.argv.slice(2);
 const root = path.resolve(__dirname, '..');
-const iconsDir = path.join(root, 'public', 'icons');
+const iconsDir = path.join(root, 'public', 'assets', 'icons');
 const playDir = path.join(root, 'docs', 'play-store');
 fs.mkdirSync(iconsDir, { recursive: true });
 fs.mkdirSync(playDir, { recursive: true });

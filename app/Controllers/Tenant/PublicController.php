@@ -49,13 +49,13 @@ final class PublicController extends Controller
             'lang' => 'en-ZA',
             'categories' => ['lifestyle', 'utilities'],
             'icons' => [
-                ['src' => '/icons/icon-192.png', 'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'any'],
-                ['src' => '/icons/icon-512.png', 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'any'],
-                ['src' => '/icons/maskable-512.png', 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'maskable'],
+                ['src' => '/assets/icons/icon-192.png', 'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'any'],
+                ['src' => '/assets/icons/icon-512.png', 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'any'],
+                ['src' => '/assets/icons/maskable-512.png', 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'maskable'],
             ],
             'shortcuts' => [
-                ['name' => 'Panic button', 'url' => '/account/panic', 'icons' => [['src' => '/icons/icon-192.png', 'sizes' => '192x192']]],
-                ['name' => 'Report an incident', 'url' => '/account/incidents/new', 'icons' => [['src' => '/icons/icon-192.png', 'sizes' => '192x192']]],
+                ['name' => 'Panic button', 'url' => '/account/panic', 'icons' => [['src' => '/assets/icons/icon-192.png', 'sizes' => '192x192']]],
+                ['name' => 'Report an incident', 'url' => '/account/incidents/new', 'icons' => [['src' => '/assets/icons/icon-192.png', 'sizes' => '192x192']]],
             ],
         ], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
     }
