@@ -19,7 +19,8 @@ function config(string $key): mixed
             'name'          => env('APP_NAME', 'SENTRA 360'),
             'tagline'       => env('APP_TAGLINE', 'Your security company. Your brand. One connected security platform.'),
             'env'           => env('APP_ENV', 'production'),
-            'url'           => rtrim(env('APP_URL', 'http://localhost'), '/'),
+            // APP_URL, or on Render the address Render assigns (RENDER_EXTERNAL_URL).
+            'url'           => rtrim(env('APP_URL') ?? env('RENDER_EXTERNAL_URL') ?? 'http://localhost', '/'),
             'key'           => env('APP_KEY', ''),
             'mail_provider' => env('MAIL_PROVIDER'),
             'sms_provider'  => env('SMS_PROVIDER'),

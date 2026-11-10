@@ -1,0 +1,43 @@
+# Render Blueprint for SENTRA 360.
+# In the Render dashboard: New -> Blueprint -> pick this repository.
+# Render will ask you to type the values marked "sync: false" (the secrets).
+services:
+  - type: web
+    name: sentra360
+    runtime: docker
+    plan: free
+    region: frankfurt
+    branch: main
+    dockerfilePath: ./Dockerfile
+    autoDeploy: true
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_NAME
+        value: SENTRA 360
+      - key: APP_KEY
+        generateValue: true
+      - key: TRUST_PROXY
+        value: "1"
+      # Database: TiDB Cloud Starter (free), AWS Frankfurt
+      - key: DB_HOST
+        value: gateway01.eu-central-1.prod.aws.tidbcloud.com
+      - key: DB_PORT
+        value: "4000"
+      - key: DB_NAME
+        value: sentra360
+      - key: DB_USER
+        value: KZB86bqFnhBTvDM.root
+      - key: DB_SSL_CA
+        value: /etc/ssl/certs/ca-certificates.crt
+      - key: DB_PASS
+        sync: false
+      # First admin login (created on first start only)
+      - key: COMPANY_NAME
+        value: SENTRA 360 Security
+      - key: ADMIN_EMAIL
+        value: admin@sentra360.co.za
+      - key: ADMIN_MOBILE
+        value: "0820000000"
+      - key: ADMIN_PASSWORD
+        sync: false
