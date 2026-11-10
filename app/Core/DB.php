@@ -40,6 +40,23 @@ final class DB
         return self::$pdo;
     }
 
+    /** Create the database named in DB_NAME if it does not exist (used by the installer). */
+    public static function createDatabaseIfMissing(): void
+    {
+        $name = env('DB_NAME', 'sentra360');
+        if (!preg_match('/^[A-Za-z0-9_]+$/', $name)) {
+            throw new \InvalidArgumentException('DB_NAME may only contain letters, numbers and underscores.');
+        }
+        $options = [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION];
+        if ($ca = self::caFile()) {
+            $options[PDO::MYSQL_ATTR_SSL_CA] = $ca;
+            $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = true;
+        }
+        $dsn = sprintf('mysql:host=%s;port=%s;charset=utf8mb4', env('DB_HOST', '127.0.0.1'), env('DB_PORT', '3306'));
+        (new PDO($dsn, env('DB_USER', 'root'), env('DB_PASS', ''), $options))
+            ->exec("CREATE DATABASE IF NOT EXISTS `$name` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+    }
+
     private static function caFile(): ?string
     {
         $ca = env('DB_SSL_CA');

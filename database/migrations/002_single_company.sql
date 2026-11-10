@@ -15,7 +15,8 @@ DROP TABLE IF EXISTS permissions;
 SET FOREIGN_KEY_CHECKS = 1;
 
 DELETE FROM user_sessions WHERE user_type = 'platform';
-ALTER TABLE user_sessions MODIFY user_type ENUM('user') NOT NULL DEFAULT 'user';
+-- (user_sessions.user_type keeps its old ENUM values; shrinking an ENUM is not
+-- supported by every MySQL-compatible database, e.g. TiDB.)
 
 -- Roles: community_member -> homeowner, company_admin -> admin,
 -- control_room_operator + response_personnel -> security_staff

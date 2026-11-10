@@ -20,7 +20,6 @@ $env = [
     'SMS_PROVIDER' => '',
     'COMPANY_NAME' => 'Test Security Co',
     'TRUST_PROXY' => '0',
-    'DB_SSL_CA' => '',
 ];
 foreach ($env as $k => $v) {
     putenv("$k=$v");
@@ -34,6 +33,7 @@ use App\Services\Installer;
 use Tests\T;
 
 echo "Preparing test database...\n";
+App\Core\DB::createDatabaseIfMissing();
 Installer::dropAll();
 Installer::migrate(fn() => null);
 Installer::seedRoles(fn() => null);

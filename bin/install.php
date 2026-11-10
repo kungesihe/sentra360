@@ -6,6 +6,7 @@ declare(strict_types=1);
  *   php bin/install.php            run migrations, create roles, the company and the first admin (from .env)
  *   php bin/install.php --demo     ...and load demonstration accounts (not allowed in production)
  *   php bin/install.php --fresh    DROP ALL TABLES first (development only)
+ *   php bin/install.php --create-db   create the DB_NAME database first if it doesn't exist (hosted MySQL/TiDB)
  */
 if (PHP_SAPI !== 'cli') {
     exit("CLI only\n");
@@ -17,6 +18,10 @@ use App\Services\Installer;
 
 $args = array_slice($argv, 1);
 $out = fn(string $s) => print($s . PHP_EOL);
+
+if (in_array('--create-db', $args, true)) {
+    App\Core\DB::createDatabaseIfMissing();
+}
 
 if (in_array('--fresh', $args, true)) {
     if (config('env') === 'production') {
