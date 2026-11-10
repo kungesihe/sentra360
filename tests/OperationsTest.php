@@ -245,7 +245,7 @@ T::test('Smoke test: every page of all three portals loads', function () {
             '/account/assets/vehicle', '/account/assets/vehicle/new', '/account/applications', '/account/services', '/account/pricelist', '/account/requests',
             '/account/quotations', '/account/payments', '/account/contacts', '/account/notifications', '/account/profile', '/account/panic'],
         'admin' => ['/admin', '/admin/incidents', '/admin/incidents/new', '/admin/applications', '/admin/applications?status=all', '/admin/quotations',
-            '/admin/requests', '/admin/requests?status=all', '/admin/services', '/admin/services/new', '/admin/pricelist', '/admin/payments', '/admin/homeowners',
+            '/admin/requests', '/admin/requests?status=all', '/admin/services/new', '/admin/pricelist', '/admin/payments', '/admin/homeowners',
             '/admin/alerts', '/admin/leads', '/admin/patrols', '/admin/reports', '/admin/reports?days=365', '/admin/staff', '/admin/branding', '/admin/audit',
             '/admin/notifications', '/admin/profile'],
         'security_staff' => ['/security', '/security/feed', '/security/assignments', '/security/incidents', '/security/incidents/new',
@@ -532,4 +532,43 @@ T::test('EFT proof of payment: customer uploads, admin approves or rejects, prot
     T::eq('paid', DB::value('SELECT status FROM payments WHERE id = ?', [$pm2['id']]), 'approved');
     T::eq('approved', DB::value('SELECT status FROM property_applications WHERE id = ?', [$app['id']]), 'application approved once paid');
     @unlink($pdf);
+});
+
+T::test('No duplicates: one services screen; extras only on plans that do not include them', function () {
+    $tid = T::$companyId;
+    $mk = fn(string $name, string $cat, ?string $for) => (int) DB::insert('services', ['tenant_id' => $tid, 'name' => $name, 'category' => $cat, 'description' => 'Test.', 'pricing' => 'quote', 'addon_for' => $for]);
+    $monitor = $mk('Alarm monitoring T', 'Add-ons', 'home');
+    $cctv = $mk('CCTV installation T', 'Installations', 'home,business');
+    $escort = $mk('Escort T', 'Specialised', 'vehicle');
+
+    $admin = T::login(T::user('admin'));
+    $admin->get('/admin/services');
+    T::eq(301, $admin->status, 'old services list is gone');
+    T::redirectsTo('/admin/pricelist', $admin, 'it moved to Services & prices');
+    $admin->get('/admin/pricelist');
+    T::contains('Services &amp; prices', $admin->body, 'one combined screen');
+    T::contains('name="addon[' . $monitor . '][]"', $admin->body, 'extras are set per plan on the same screen');
+
+    $home = T::user('homeowner');
+    $h = T::login($home);
+    $h->get('/account/assets/property/new?type=business');
+    T::contains('CCTV installation T', $h->body, 'business can add CCTV');
+    $h->post('/account/assets/property', ['name' => 'Shop', 'property_type' => 'Business premises', 'address' => '3 Block H', 'suburb' => 'Soshanguve Block H', 'city' => 'Pretoria',
+        'apply' => 1, 'extras' => ['Alarm monitoring T', 'CCTV installation T']]);
+    $app = DB::one('SELECT * FROM property_applications WHERE applicant_id = ? ORDER BY id DESC', [$home['id']]);
+    T::eq(['Business alarm plan', 'CCTV installation T'], json_decode($app['services_requested'], true), 'business plan already monitors the alarm, so that extra is dropped');
+
+    $h->get('/account/assets/vehicle/new');
+    T::notContains('CCTV installation T', $h->body, 'cars are not offered house extras');
+    T::contains('Escort T', $h->body, 'cars get vehicle extras');
+
+    $h->get('/account/services/' . $monitor);
+    T::eq(404, $h->status, 'monthly add-ons are added to a plan, not booked on their own');
+    $h->get('/account/services/' . $cctv);
+    T::eq(200, $h->status, 'once-off installations can still be booked');
+
+    $admin->get('/admin/pricelist');
+    $admin->post('/admin/pricelist', ['pricing' => [$monitor => 'quote'], 'addon' => [$monitor => ['home', 'business', 'nonsense']], 'active' => [$monitor => 1]]);
+    T::eq('home,business', DB::value('SELECT addon_for FROM services WHERE id = ?', [$monitor]), 'admin changes which plans offer an extra');
+    DB::run('DELETE FROM services WHERE id IN (?, ?, ?)', [$monitor, $cctv, $escort]);
 });

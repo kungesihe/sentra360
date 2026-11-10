@@ -16,7 +16,8 @@
   <div class="row g-3">
     <?php foreach ($assets as $a):
       $plan = $P::forAsset($kind, $a);
-      $isBiz = $P::typeFor($kind, $a) === 'business'; ?>
+      $isBiz = $P::typeFor($kind, $a) === 'business';
+      $extras = $extrasByType[$P::typeFor($kind, $a)] ?? []; ?>
       <div class="col-md-6 col-xl-4">
         <div class="panel h-100 d-flex flex-column">
           <div class="d-flex justify-content-between align-items-start mb-1">

@@ -41,7 +41,11 @@ uksort($groups, fn($a, $b) => [$rank($a), $a] <=> [$rank($b), $b]);
         <tbody>
           <?php foreach ($list as $s): ?>
             <tr>
-              <td><a class="fw-semibold" href="<?= $public ? '/services/' : '/account/services/' ?><?= (int) $s['id'] ?>"><?= e($s['name']) ?></a><div class="small text-body-secondary"><?= e(mb_strimwidth($s['description'], 0, 120, '…')) ?></div></td>
+              <td>
+                <?php if ($cat === 'Add-ons'): ?><span class="fw-semibold"><?= e($s['name']) ?></span><?php else: ?><a class="fw-semibold" href="<?= $public ? '/services/' : '/account/services/' ?><?= (int) $s['id'] ?>"><?= e($s['name']) ?></a><?php endif; ?>
+                <div class="small text-body-secondary"><?= e(mb_strimwidth($s['description'], 0, 120, '…')) ?></div>
+                <?php if ($s['addon_for']): ?><div class="small text-success">Can be added to the <?= e(implode(' or ', array_map('ucfirst', explode(',', $s['addon_for'])))) ?> plan</div><?php endif; ?>
+              </td>
               <td class="text-end text-nowrap"><?= App\Core\View::partial('shared/price', ['s' => $s]) ?><?= $s['pricing'] === 'quote' && $s['price_unit'] ? '<div class="small text-body-secondary">' . e($s['price_unit']) . '</div>' : '' ?></td>
             </tr>
           <?php endforeach; ?>

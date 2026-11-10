@@ -1,5 +1,5 @@
 <?php $o = $_SESSION['_old'] ?? []; $v = fn($k, $d = '') => e($o[$k] ?? ($s[$k] ?? $d)); $pricing = $o['pricing'] ?? ($s['pricing'] ?? 'quote'); ?>
-<a href="/admin/services" class="small"><i class="bi bi-arrow-left"></i> Services</a>
+<a href="/admin/pricelist" class="small"><i class="bi bi-arrow-left"></i> Services &amp; prices</a>
 <form method="post" action="/admin/services/<?= $s ? (int) $s['id'] : 'new' ?>" enctype="multipart/form-data" class="panel mt-2" style="max-width:860px" novalidate>
   <?= csrf_field() ?>
   <div class="row g-3">
@@ -20,6 +20,14 @@
     <div class="col-12"><label class="form-label" for="requirements">Additional requirements</label><textarea class="form-control" id="requirements" name="requirements" rows="2"><?= $v('requirements') ?></textarea></div>
     <div class="col-12"><label class="form-label" for="files">Photos (up to 4)</label><input class="form-control" type="file" id="files" name="files[]" multiple accept="image/png,image/jpeg,image/webp">
       <?php foreach ($photos as $ph): ?><label class="d-inline-flex align-items-center gap-1 me-3 mt-2 small"><img src="/files/<?= (int) $ph['id'] ?>" alt="" class="file-thumb-sm"><input type="checkbox" name="remove_photos[]" value="<?= (int) $ph['id'] ?>"> remove</label><?php endforeach; ?></div>
+    <?php if (!$s || !$s['plan_for']): $on = explode(',', (string) ($s['addon_for'] ?? '')); ?>
+      <div class="col-12"><span class="form-label d-block">Offer as an optional extra on</span>
+        <?php foreach (['home' => 'Home plan', 'business' => 'Business plan', 'vehicle' => 'Vehicle plan'] as $k => $lbl): ?>
+          <div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" name="addon[]" value="<?= $k ?>" id="addon-<?= $k ?>"<?= in_array($k, $on, true) ? ' checked' : '' ?>><label class="form-check-label" for="addon-<?= $k ?>"><?= $lbl ?></label></div>
+        <?php endforeach; ?>
+        <div class="form-text">Only tick plans that don't already include it, so customers are never offered the same thing twice.</div>
+      </div>
+    <?php endif; ?>
     <div class="col-12"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="is_active" name="is_active" value="1"<?= ($s['is_active'] ?? 1) ? ' checked' : '' ?>><label class="form-check-label" for="is_active">Listed in the marketplace</label></div></div>
   </div>
   <button class="btn btn-brand mt-3">Save service</button>

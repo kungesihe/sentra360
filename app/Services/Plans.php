@@ -72,14 +72,37 @@ final class Plans
         return self::get(self::typeFor($kind, $asset));
     }
 
-    /** Optional extras a customer can add to a plan (add-ons and installations, not plans). */
-    public static function extras(): array
+    /**
+     * Optional extras for one plan type: only services the Admin marked as an extra for that
+     * plan (addon_for), so a plan never offers something it already includes.
+     */
+    public static function extras(string $type): array
     {
+        if (!in_array($type, self::TYPES, true)) {
+            return [];
+        }
         return DB::all(
-            'SELECT * FROM services WHERE tenant_id = ? AND is_active = 1 AND plan_for IS NULL AND category IN ("Add-ons", "Installations", "Assessments")
-              ORDER BY FIELD(category, "Add-ons", "Installations", "Assessments"), sort_order, name',
-            [TenantContext::id()]
+            'SELECT * FROM services WHERE tenant_id = ? AND is_active = 1 AND plan_for IS NULL AND FIND_IN_SET(?, addon_for) > 0
+              ORDER BY category = "Add-ons" DESC, category, sort_order, name',
+            [TenantContext::id(), $type]
         );
+    }
+
+    /** Extras for every plan type, keyed by type. */
+    public static function extrasByType(): array
+    {
+        $out = [];
+        foreach (self::TYPES as $t) {
+            $out[$t] = self::extras($t);
+        }
+        return $out;
+    }
+
+    /** Store a set of plan types as the addon_for value (null = not an extra). */
+    public static function addonValue(array $types): ?string
+    {
+        $types = array_values(array_intersect(self::TYPES, $types));
+        return $types ? implode(',', $types) : null;
     }
 
     public static function includes(array $plan): array

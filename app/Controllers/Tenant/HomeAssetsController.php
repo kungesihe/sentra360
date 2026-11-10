@@ -36,7 +36,7 @@ final class HomeAssetsController extends Controller
     private static function selection(string $kind, array $asset): array
     {
         $plan = Plans::forAsset($kind, $asset);
-        $extraNames = array_column(Plans::extras(), 'name');
+        $extraNames = array_column(Plans::extras(Plans::typeFor($kind, $asset)), 'name');
         $extras = array_values(array_intersect($extraNames, (array) ($_POST['extras'] ?? [])));
         return [$plan ? array_merge([$plan['name']], $extras) : $extras, $plan];
     }
@@ -53,7 +53,7 @@ final class HomeAssetsController extends Controller
             [TenantContext::id(), $u['id']]
         );
         $this->render('assets', ['title' => $kind === 'property' ? 'My homes & businesses' : 'My vehicles', 'kind' => $kind, 'assets' => $assets,
-            'plans' => Plans::all(), 'extras' => Plans::extras()]);
+            'plans' => Plans::all(), 'extrasByType' => Plans::extrasByType()]);
     }
 
     public function create(string $kind): void
@@ -61,7 +61,7 @@ final class HomeAssetsController extends Controller
         $kind = $this->kindOr404($kind);
         $this->render('asset_form', [
             'title' => $kind === 'vehicle' ? 'Add a vehicle' : (($_GET['type'] ?? '') === 'business' ? 'Add a business' : 'Add a home'), 'kind' => $kind,
-            'plans' => Plans::all(), 'extras' => Plans::extras(), 'types' => self::PROPERTY_TYPES,
+            'plans' => Plans::all(), 'extrasByType' => Plans::extrasByType(), 'types' => self::PROPERTY_TYPES,
             'presetType' => ($_GET['type'] ?? '') === 'business' ? Plans::BUSINESS_TYPE : null,
         ]);
     }
@@ -78,7 +78,7 @@ final class HomeAssetsController extends Controller
         $kind = $this->kindOr404($kind);
         $this->render('asset_form', [
             'title' => $kind === 'property' ? 'Edit property' : 'Edit vehicle', 'kind' => $kind, 'asset' => $this->ownAsset($kind, $id),
-            'plans' => Plans::all(), 'extras' => [], 'types' => self::PROPERTY_TYPES, 'presetType' => null,
+            'plans' => Plans::all(), 'extrasByType' => [], 'types' => self::PROPERTY_TYPES, 'presetType' => null,
         ]);
     }
 

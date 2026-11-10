@@ -103,7 +103,7 @@ function nav_groups(string $portal): array
             ['/admin', 'speedometer2', 'Dashboard', []],
             ['/admin/incidents', 'megaphone', 'Incidents', [['/admin/incidents', 'Incidents'], ['/admin/patrols', 'Patrol log'], ['/admin/alerts', 'Safety alerts']]],
             ['/admin/applications', 'people', 'Clients', [['/admin/applications', 'Applications'], ['/admin/leads', 'Leads'], ['/admin/homeowners', 'Homeowners']]],
-            ['/admin/quotations', 'cash-coin', 'Sales', [['/admin/quotations', 'Quotations'], ['/admin/requests', 'Bookings'], ['/admin/services', 'Services'], ['/admin/pricelist', 'Price list'], ['/admin/payments', 'Payments']]],
+            ['/admin/quotations', 'cash-coin', 'Sales', [['/admin/quotations', 'Quotations'], ['/admin/requests', 'Bookings'], ['/admin/pricelist', 'Services & prices'], ['/admin/payments', 'Payments']]],
             ['/admin/reports', 'bar-chart', 'Reports', []],
             ['/admin/staff', 'gear', 'Settings', [['/admin/staff', 'Logins'], ['/admin/branding', 'Branding'], ['/admin/audit', 'Audit log'], ['/admin/profile', 'My login']]],
         ],

@@ -10,6 +10,7 @@ use App\Core\DB;
 use App\Core\HttpException;
 use App\Core\TenantContext;
 use App\Services\Ops;
+use App\Services\Plans;
 use App\Services\Workflow;
 
 /** Admin portal: applications, quotations, services, bookings, payments, safety alerts, reports. */
@@ -244,15 +245,15 @@ final class AdminOpsController extends Controller
 
     public function services(): void
     {
-        $rows = DB::all('SELECT s.*, (SELECT COUNT(*) FROM service_requests r WHERE r.service_id = s.id) AS requests FROM services s WHERE s.tenant_id = ? ORDER BY s.category, s.sort_order, s.name', [TenantContext::id()]);
-        $this->render('services', ['title' => 'Services', 'rows' => $rows]);
+        // One screen for services and their prices: the old list now lives in the price list.
+        redirect('/admin/pricelist', 301);
     }
 
     /** One screen to manage the prices of every service (nothing is deleted here). */
     public function pricelist(): void
     {
         $rows = DB::all('SELECT * FROM services WHERE tenant_id = ? ORDER BY category, sort_order, name', [TenantContext::id()]);
-        $this->render('pricelist', ['title' => 'Price list', 'rows' => $rows]);
+        $this->render('pricelist', ['title' => 'Services & prices', 'rows' => $rows]);
     }
 
     public function pricelistSave(): void
@@ -285,6 +286,7 @@ final class AdminOpsController extends Controller
                 'is_active' => empty($_POST['active'][$id]) ? 0 : 1,
                 'sort_order' => max(0, min(999, (int) ($_POST['sort'][$id] ?? $s['sort_order']))),
                 'setup_cents' => $s['plan_for'] ? Ops::cents((string) ($_POST['setup'][$id] ?? '')) : $s['setup_cents'],
+                'addon_for' => $s['plan_for'] ? null : Plans::addonValue((array) ($_POST['addon'][$id] ?? [])),
             ];
         }
         if ($errors) {
@@ -295,7 +297,7 @@ final class AdminOpsController extends Controller
             DB::update('services', $data, ['id' => $id, 'tenant_id' => $tid]);
         }
         Audit::log('services.pricelist_saved', 'service', null, ['count' => count($updates)]);
-        flash('success', 'Price list saved (' . count($updates) . ' services).');
+        flash('success', 'Saved (' . count($updates) . ' services).');
         redirect('/admin/pricelist');
     }
 
@@ -326,6 +328,7 @@ final class AdminOpsController extends Controller
             $this->backWithErrors($back, $v->errors);
         }
         $data = $v->clean + ['price_cents' => $price, 'is_active' => empty($_POST['is_active']) ? 0 : 1];
+        $data['addon_for'] = ($existing && $existing['plan_for']) ? null : Plans::addonValue((array) ($_POST['addon'] ?? []));
         if ($existing && $existing['plan_for']) {
             $data['setup_cents'] = Ops::cents((string) ($_POST['setup'] ?? ''));
             $data['includes'] = mb_substr(trim((string) ($_POST['includes'] ?? '')), 0, 3000) ?: null;
@@ -344,7 +347,7 @@ final class AdminOpsController extends Controller
         }
         Audit::log('service.saved', 'service', $sid);
         flash('success', 'Service saved.');
-        redirect('/admin/services');
+        redirect('/admin/pricelist');
     }
 
     // ------------------------------------------------------ service requests

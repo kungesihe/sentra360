@@ -38,7 +38,7 @@ Installer::seedRoles($out);
 $tenantId = Installer::seedCompany($out);
 Installer::seedServices($tenantId, $out);
 $n = \App\Services\Plans::seed($tenantId);
-$out($n ? "  $n protection plan(s) added (edit prices in Admin → Sales → Price list)" : '  protection plans ready');
+$out($n ? "  $n protection plan(s) added (edit prices in Admin → Sales → Services & prices)" : '  protection plans ready');
 
 if (in_array('--demo', $args, true)) {
     $out('Loading demonstration accounts...');

@@ -20,15 +20,18 @@ final class HomeCommerceController extends Controller
         $this->view('home/' . $view, $data + ['user' => Auth::user()], 'tenant');
     }
 
+    /**
+     * Services a customer can book on their own. Plans are signed up for from the protection
+     * list, and monthly add-ons are added to a plan, so neither is booked here (no duplicates).
+     */
     public static function activeServices(): array
     {
-        // Protection plans are signed up for from the protection list, not booked here.
-        return DB::all('SELECT * FROM services WHERE tenant_id = ? AND is_active = 1 AND plan_for IS NULL ORDER BY category, sort_order, name', [TenantContext::id()]);
+        return DB::all('SELECT * FROM services WHERE tenant_id = ? AND is_active = 1 AND plan_for IS NULL AND category <> "Add-ons" ORDER BY category, sort_order, name', [TenantContext::id()]);
     }
 
     public static function service(int $id): array
     {
-        return DB::one('SELECT * FROM services WHERE id = ? AND tenant_id = ? AND is_active = 1 AND plan_for IS NULL', [$id, TenantContext::id()]) ?? throw new HttpException(404);
+        return DB::one('SELECT * FROM services WHERE id = ? AND tenant_id = ? AND is_active = 1 AND plan_for IS NULL AND category <> "Add-ons"', [$id, TenantContext::id()]) ?? throw new HttpException(404);
     }
 
     // ---------------------------------------------------------- marketplace
@@ -38,10 +41,11 @@ final class HomeCommerceController extends Controller
         $this->render('services', ['title' => 'Services', 'services' => self::activeServices()]);
     }
 
-    /** Printable price list of every listed service (public and inside the app). */
+    /** Printable price list: plans, add-ons and once-off services (public and inside the app). */
     public function pricelist(): void
     {
-        $this->render('pricelist', ['title' => 'Price list', 'services' => self::activeServices()]);
+        $all = DB::all('SELECT * FROM services WHERE tenant_id = ? AND is_active = 1 AND plan_for IS NULL ORDER BY category, sort_order, name', [TenantContext::id()]);
+        $this->render('pricelist', ['title' => 'Price list', 'services' => $all]);
     }
 
     public function serviceShow(string $id): void
