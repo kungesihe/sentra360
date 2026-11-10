@@ -1,0 +1,12 @@
+.git
+.env
+.env.*
+!.env.example
+render.secrets
+*.pem
+.claude
+public/uploads/*
+!public/uploads/.htaccess
+storage/logs/*
+tests
+docker/mariadb

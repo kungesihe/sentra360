@@ -1,0 +1,13 @@
+# Secrets — never commit
+.env
+render.secrets
+*.pem
+
+# Runtime data
+public/uploads/*
+!public/uploads/.htaccess
+storage/logs/*
+!storage/logs/.gitkeep
+
+# Local tooling
+.claude/

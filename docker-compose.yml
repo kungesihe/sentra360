@@ -1,0 +1,36 @@
+name: sentra360
+
+services:
+  app:
+    build: ./docker/php
+    container_name: sentra360-app
+    ports:
+      - "8360:80"
+    env_file: .env
+    volumes:
+      - ./:/var/www/sentra
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: mariadb:11.4
+    container_name: sentra360-db
+    environment:
+      MARIADB_DATABASE: ${DB_NAME:-sentra360}
+      MARIADB_USER: ${DB_USER:-sentra}
+      MARIADB_PASSWORD: ${DB_PASS:-sentra_dev_pass}
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASS:-sentra_root_dev}
+    ports:
+      - "3360:3306"
+    volumes:
+      - dbdata:/var/lib/mysql
+      - ./docker/mariadb/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  dbdata:
