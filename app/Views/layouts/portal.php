@@ -7,28 +7,40 @@ $portal = $portal ?? 'admin';
 $navs = [
     'admin' => [
         ['/admin', 'speedometer2', 'Dashboard'],
+        ['/admin/incidents', 'megaphone', 'Incidents'],
+        ['/admin/applications', 'house-check', 'Protection applications'],
+        ['/admin/quotations', 'file-earmark-text', 'Quotations'],
+        ['/admin/requests', 'calendar-check', 'Service requests'],
+        ['/admin/services', 'bag-check', 'Services'],
+        ['/admin/payments', 'cash-coin', 'Payments'],
         ['/admin/homeowners', 'house-door', 'Homeowners'],
+        ['/admin/alerts', 'broadcast', 'Safety alerts'],
+        ['/admin/patrols', 'signpost-split', 'Patrol log'],
+        ['/admin/reports', 'bar-chart', 'Reports'],
         ['/admin/staff', 'person-badge', 'Admin & security logins'],
         ['/admin/branding', 'palette', 'Branding & profile'],
         ['/admin/audit', 'journal-text', 'Audit log'],
+        ['/admin/notifications', 'bell', 'Notifications'],
         ['/admin/profile', 'key', 'My login'],
     ],
     'security' => [
-        ['/security', 'speedometer2', 'Dashboard'],
+        ['/security', 'display', 'Control room'],
+        ['/security/assignments', 'person-walking', 'My assignments'],
+        ['/security/incidents', 'megaphone', 'Incidents'],
+        ['/security/patrols', 'signpost-split', 'Patrol log'],
         ['/security/homeowners', 'house-door', 'Homeowners'],
+        ['/security/notifications', 'bell', 'Notifications'],
         ['/security/profile', 'key', 'My login'],
     ],
 ];
-$coming = [
-    'admin' => ['Incidents', 'Property applications', 'Vehicle applications', 'Quotations', 'Services', 'Reports'],
-    'security' => ['Incident feed', 'Panic alerts', 'My assignments', 'Map'],
-];
+$unread = App\Services\Ops::unreadCount((int) $me['id']);
 $portalLabel = $portal === 'admin' ? 'Admin' : 'Security company';
 ?>
 <!doctype html>
 <html lang="en">
 <head>
 <?php require BASE_PATH . '/app/Views/partials/head.php'; ?>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="anonymous">
 <title><?= e($title ?? '') ?> · <?= e($t['display_name']) ?> <?= e($portalLabel) ?></title>
 <style>:root{--brand:<?= $safeColor($t['primary_color'], '#0B3D91') ?>;--brand-2:<?= $safeColor($t['secondary_color'], '#111827') ?>;}</style>
 </head>
@@ -42,10 +54,8 @@ $portalLabel = $portal === 'admin' ? 'Admin' : 'Security company';
     </div>
     <nav class="nav flex-column p-2">
       <?php $home = $navs[$portal][0][0]; foreach ($navs[$portal] as [$href, $icon, $label]): ?>
-        <a class="nav-link<?= ($p === $href || ($href !== $home && str_starts_with($p, $href))) ? ' active' : '' ?>" href="<?= $href ?>"><i class="bi bi-<?= $icon ?>"></i> <?= e($label) ?></a>
+        <a class="nav-link<?= ($p === $href || ($href !== $home && str_starts_with($p, $href))) ? ' active' : '' ?>" href="<?= $href ?>"><i class="bi bi-<?= $icon ?>"></i> <?= e($label) ?><?php if (str_ends_with($href, '/notifications') && $unread): ?> <span class="badge rounded-pill text-bg-danger ms-auto"><?= $unread ?></span><?php endif; ?></a>
       <?php endforeach; ?>
-      <div class="side-label">Coming in later phases</div>
-      <?php foreach ($coming[$portal] as $c): ?><span class="nav-link disabled"><i class="bi bi-lock"></i> <?= e($c) ?></span><?php endforeach; ?>
     </nav>
   </aside>
   <div class="portal-main">
@@ -58,12 +68,13 @@ $portalLabel = $portal === 'admin' ? 'Admin' : 'Security company';
       </div>
     </header>
     <div class="portal-content">
-      <h1 class="h4 mb-4"><?= e($title ?? '') ?></h1>
+      <h1 class="h4 mb-4 no-print-title"><?= e($title ?? '') ?></h1>
       <?php require BASE_PATH . '/app/Views/partials/flash.php'; ?>
       <?= $content ?>
     </div>
   </div>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="anonymous" async id="leaflet-js"></script>
 <?php require BASE_PATH . '/app/Views/partials/scripts.php'; ?>
 </body>
 </html>

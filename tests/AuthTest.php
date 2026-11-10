@@ -24,37 +24,37 @@ T::test('Weak passwords and missing consent are rejected', function () {
     T::contains('accept the terms', $c->body, 'shows consent error');
 });
 
-T::test('Homeowner registration → mobile OTP → email link → active account (no fake delivery)', function () {
+T::test('Homeowner registration: active immediately while verification is switched off', function () {
     $c = new Http(T::HOST);
     $c->get('/register');
     $c->post('/register', ['first_name' => 'Lindiwe', 'surname' => 'M', 'mobile' => '082 555 0002', 'email' => 'Lindiwe@Example.test', 'password' => 'Password123', 'password_confirm' => 'Password123', 'consent' => 1]);
-    T::redirectsTo('/account/verify', $c, 'goes to verification');
+    T::redirectsTo('/account', $c, 'goes straight to the account');
     $u = DB::one('SELECT u.*, r.code AS role_code FROM users u JOIN roles r ON r.id = u.role_id WHERE email = ?', ['lindiwe@example.test']);
     T::true($u !== null, 'user stored with lower-cased email');
     T::eq('homeowner', $u['role_code'], 'self-registered accounts are homeowners');
     T::eq('+27825550002', $u['mobile'], 'mobile normalised to E.164');
-    T::eq('pending', $u['status'], 'new account is pending');
+    T::eq('active', $u['status'], 'account is active without verification');
     T::true(password_verify('Password123', $u['password_hash']), 'password stored as a hash');
     T::eq(1, (int) DB::value('SELECT COUNT(*) FROM consents WHERE user_id = ? AND consent_type = "terms_privacy" AND granted = 1', [$u['id']]), 'POPIA consent recorded');
-
-    T::eq('not_configured', DB::value('SELECT status FROM notifications WHERE user_id = ? AND channel = "sms" ORDER BY id DESC LIMIT 1', [$u['id']]), 'SMS recorded as not delivered');
-    $c->get('/account/verify');
-    T::contains('not</u> being sent', $c->body, 'page tells the user SMS is not being sent');
-    T::notContains('We sent a 6-digit code', $c->body, 'page does not claim an SMS was sent');
-
-    preg_match('/code is (\d{6})/', T::lastMessage('+27825550002'), $m);
-    $c->post('/account/verify/mobile', ['code' => $m[1] === '000000' ? '111111' : '000000']);
-    $c->get('/account/verify');
-    T::contains('incorrect', $c->body, 'wrong OTP rejected');
-    $c->post('/account/verify/mobile', ['code' => $m[1]]);
-    T::true(DB::value('SELECT mobile_verified_at FROM users WHERE id = ?', [$u['id']]) !== null, 'mobile verified with correct OTP');
-
-    preg_match('#(/verify-email\?[^\s]+)#', T::lastMessage('lindiwe@example.test'), $m);
-    $c->get($m[1]);
-    T::eq('active', DB::value('SELECT status FROM users WHERE id = ?', [$u['id']]), 'account active after both verifications');
-    $c->get($m[1]);
+    T::eq(0, (int) DB::value('SELECT COUNT(*) FROM notifications WHERE user_id = ? AND channel = "sms"', [$u['id']]), 'no verification SMS attempted');
     $c->get('/account');
-    T::contains('invalid or has expired', $c->body, 'email link is single-use');
+    T::notContains('Verify your account', $c->body, 'no verification banner');
+});
+
+T::test('Mobile OTP and email links (kept for when verification is switched on)', function () {
+    App\Core\TenantContext::refresh();
+    App\Core\TenantContext::current();
+    $u = T::user('homeowner', 'pending');
+    $t = App\Core\TenantContext::current();
+    T::eq('not_configured', App\Services\VerificationService::sendMobileOtp($u, $t), 'SMS recorded as not delivered (no fake delivery)');
+    preg_match('/code is (\d{6})/', T::lastMessage($u['mobile']), $m);
+    T::true(App\Services\VerificationService::checkOtp($u, $m[1] === '000000' ? '111111' : '000000') !== true, 'wrong code rejected');
+    T::true(App\Services\VerificationService::checkOtp($u, $m[1]) === true, 'right code accepted');
+    T::true(App\Services\VerificationService::checkOtp($u, $m[1]) !== true, 'code is single-use');
+    App\Services\VerificationService::sendEmailVerification($u, $t);
+    preg_match('#t=([a-f0-9]{64})#', T::lastMessage($u['email']), $m);
+    T::true(App\Services\VerificationService::checkToken(T::$companyId, $u['uuid'], $m[1], 'verify_email', true) !== null, 'email link valid once');
+    T::true(App\Services\VerificationService::checkToken(T::$companyId, $u['uuid'], $m[1], 'verify_email', true) === null, 'email link single-use');
 });
 
 T::test('Account locks after 5 failed sign-ins', function () {

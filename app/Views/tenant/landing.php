@@ -27,30 +27,40 @@
   </div>
 </section>
 
+<?php $alerts = App\Core\DB::all('SELECT * FROM safety_alerts WHERE tenant_id = ? AND (expires_at IS NULL OR expires_at > NOW()) ORDER BY id DESC LIMIT 3', [App\Core\TenantContext::id()]); ?>
+<?php if ($alerts): ?>
+<section class="pt-4">
+  <div class="container">
+    <h2 class="h5 mb-3"><i class="bi bi-megaphone-fill"></i> Community safety alerts</h2>
+    <?php foreach ($alerts as $al): ?>
+      <div class="alert alert-<?= $al['level'] === 'urgent' ? 'danger' : ($al['level'] === 'warning' ? 'warning' : 'info') ?>">
+        <strong><?= e($al['title']) ?></strong><?= $al['area'] ? ' · ' . e($al['area']) : '' ?> <span class="small text-body-secondary">(<?= e(date('j M, H:i', strtotime($al['published_at']))) ?>)</span>
+        <div class="small mt-1" style="white-space:pre-line"><?= e($al['body']) ?></div>
+      </div>
+    <?php endforeach; ?>
+  </div>
+</section>
+<?php endif; ?>
 <section class="py-5">
   <div class="container">
     <h2 class="h3 mb-4">How can we help?</h2>
     <div class="row g-3">
-      <?php
-      $actions = [
-        ['incident_reporting', 'megaphone', 'Report an incident', 'Crime, suspicious activity, accidents and emergencies in your area.'],
-        ['residential_applications', 'house-check', 'Protect your home', 'Apply for armed response, monitoring, patrols, CCTV or fencing.'],
-        ['vehicle_applications', 'car-front', 'Protect your vehicle', 'Apply for vehicle protection services.'],
-        ['service_marketplace', 'bag-check', 'Specialised services', 'VIP escorts, event security, assessments and more.'],
-      ];
-      foreach ($actions as [$key, $ico, $h, $p]):
-        ?>
+      <?php foreach ([
+        ['/account/incidents/new', 'megaphone', 'Report an incident', 'Crime, suspicious activity, accidents and emergencies in your area.'],
+        ['/account/assets/property/new', 'house-check', 'Protect your home', 'Apply for armed response, monitoring, patrols, CCTV or fencing.'],
+        ['/account/assets/vehicle/new', 'car-front', 'Protect your vehicle', 'Apply for vehicle protection services.'],
+        ['/services', 'bag-check', 'Specialised services', 'VIP escorts, event security, assessments and more.'],
+      ] as [$href, $ico, $h, $p]): ?>
         <div class="col-sm-6 col-lg-3">
-          <div class="action-card disabled" aria-disabled="true">
+          <a class="action-card" href="<?= $href ?>">
             <div class="ico"><i class="bi bi-<?= $ico ?>"></i></div>
             <div class="fw-semibold"><?= $h ?></div>
-            <p class="small text-body-secondary mb-2"><?= $p ?></p>
-            <span class="badge text-bg-light border">Opening soon</span>
-          </div>
+            <p class="small text-body-secondary mb-0"><?= $p ?></p>
+          </a>
         </div>
       <?php endforeach; ?>
     </div>
-    <p class="small text-body-secondary mt-3 mb-0">Register now so you're ready when online reporting and applications open.</p>
+    <?php if (!$u): ?><p class="small text-body-secondary mt-3 mb-0">You'll be asked to sign in or create a free account first.</p><?php endif; ?>
   </div>
 </section>
 

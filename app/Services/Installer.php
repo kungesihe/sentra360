@@ -63,6 +63,69 @@ final class Installer
                 [$code, $name, $staff, $desc]);
         }
         $out('  roles ready: homeowner, admin, security company');
+        self::seedCategories($out);
+    }
+
+    /** Incident categories from the brief. code => [name, group, priority] */
+    public const CATEGORIES = [
+        'robbery' => ['Robbery', 'crime', 'high'], 'armed_robbery' => ['Armed robbery', 'crime', 'critical'],
+        'hijacking' => ['Hijacking', 'crime', 'critical'], 'attempted_hijacking' => ['Attempted hijacking', 'crime', 'high'],
+        'house_break_in' => ['House break-in', 'crime', 'high'], 'business_break_in' => ['Business break-in', 'crime', 'high'],
+        'theft' => ['Theft', 'crime', 'normal'], 'vehicle_theft' => ['Vehicle theft', 'crime', 'high'],
+        'vandalism' => ['Vandalism', 'crime', 'normal'], 'assault' => ['Assault', 'crime', 'high'],
+        'suspicious_activity' => ['Suspicious activity', 'crime', 'normal'], 'trespassing' => ['Trespassing', 'crime', 'normal'],
+        'kidnapping' => ['Kidnapping', 'crime', 'critical'], 'fraud' => ['Fraud', 'crime', 'low'],
+        'other_crime' => ['Other criminal activity', 'crime', 'normal'],
+        'mva' => ['Motor vehicle accident', 'emergency', 'high'], 'pedestrian_accident' => ['Pedestrian accident', 'emergency', 'high'],
+        'fire' => ['Fire', 'emergency', 'critical'], 'medical' => ['Medical emergency', 'emergency', 'critical'],
+        'workplace_accident' => ['Workplace accident', 'emergency', 'high'], 'road_hazard' => ['Road hazard', 'emergency', 'normal'],
+        'other_emergency' => ['Other emergency', 'emergency', 'high'],
+    ];
+
+    public static function seedCategories(callable $out): void
+    {
+        if (!DB::value("SELECT 1 FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = 'incident_categories'")) {
+            return;
+        }
+        $i = 0;
+        foreach (self::CATEGORIES as $code => [$name, $group, $prio]) {
+            DB::run('INSERT INTO incident_categories (code, name, group_code, priority, sort_order) VALUES (?,?,?,?,?)
+                     ON DUPLICATE KEY UPDATE name = VALUES(name), group_code = VALUES(group_code), sort_order = VALUES(sort_order)',
+                [$code, $name, $group, $prio, $i++]);
+        }
+        $out('  incident categories ready');
+    }
+
+    /** Starter services from the brief (quotation required); the Admin edits prices and availability. */
+    public static function seedServices(int $tenantId, callable $out): void
+    {
+        if (DB::value('SELECT 1 FROM services WHERE tenant_id = ?', [$tenantId])) {
+            return;
+        }
+        $list = [
+            ['Armed response', 'Residential', 'Rapid armed response to alarm activations and panic alerts at your protected property.', 'per month'],
+            ['Alarm monitoring', 'Residential', '24/7 monitoring of your alarm system by our control room.', 'per month'],
+            ['Security patrols', 'Residential', 'Scheduled and random patrols of your street or estate.', 'per month'],
+            ['VIP escort', 'Specialised', 'Trained close-protection officers for VIP movements.', 'per hour'],
+            ['Executive protection', 'Specialised', 'Executive close protection for business travel and events.', 'per day'],
+            ['Personal security escort', 'Specialised', 'An officer accompanies you to and from a location.', 'per trip'],
+            ['Private event security', 'Events', 'Access control and guarding for private functions.', 'per event'],
+            ['Home event protection', 'Events', 'Guards and parking control for parties and gatherings at home.', 'per event'],
+            ['Business security', 'Business', 'Guarding and access control for business premises.', 'per month'],
+            ['Security assessment', 'Assessments', 'An on-site risk assessment with written recommendations.', 'once-off'],
+            ['CCTV installation', 'Installations', 'Supply and installation of CCTV cameras and recording.', 'once-off'],
+            ['Alarm installation', 'Installations', 'Supply and installation of an alarm system.', 'once-off'],
+            ['Access control', 'Installations', 'Gate motors, intercoms, biometric and card access.', 'once-off'],
+            ['Electric fencing', 'Installations', 'Compliant electric fence installation and certification.', 'once-off'],
+        ];
+        foreach ($list as $i => [$name, $cat, $desc, $unit]) {
+            DB::insert('services', [
+                'tenant_id' => $tenantId, 'name' => $name, 'category' => $cat, 'description' => $desc,
+                'pricing' => 'quote', 'price_unit' => $unit, 'service_area' => 'Our coverage area',
+                'availability_text' => 'Book at least 48 hours ahead', 'sort_order' => $i,
+            ]);
+        }
+        $out('  starter services added (quotation required; edit them under Admin → Services)');
     }
 
     /** Create the company record from .env (only if none exists yet). */

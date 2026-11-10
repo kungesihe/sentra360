@@ -13,6 +13,8 @@ All settings live in `.env`.
 | `DB_*` | Database connection. |
 | `MAIL_PROVIDER`, `MAIL_FROM` | Email delivery. Empty means **not configured**; see [INTEGRATIONS.md](INTEGRATIONS.md). |
 | `SMS_PROVIDER` | SMS/OTP delivery. Empty means **not configured**. |
+| `REQUIRE_VERIFICATION` | `0` (default): homeowners are active immediately. `1`: they must confirm mobile (SMS code) and email first. Only switch on once SMS and email providers work. |
+| `PAYFAST_MERCHANT_ID`, `PAYFAST_MERCHANT_KEY`, `PAYFAST_PASSPHRASE`, `PAYFAST_SANDBOX` | Online card payments via PayFast. Leave empty to use EFT + manual recording. `PAYFAST_SANDBOX=1` (default) uses PayFast's test site. |
 
 ## The three logins
 

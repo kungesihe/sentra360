@@ -36,6 +36,7 @@ Installer::migrate($out);
 $out('Setting up...');
 Installer::seedRoles($out);
 $tenantId = Installer::seedCompany($out);
+Installer::seedServices($tenantId, $out);
 
 if (in_array('--demo', $args, true)) {
     $out('Loading demonstration accounts...');

@@ -39,6 +39,11 @@ $val = fn($k, $fallback) => e($o[$k] ?? $fallback);
         </div>
       </div>
       <div class="panel mb-4">
+        <h2 class="h6 text-uppercase text-body-secondary mb-1">How customers pay</h2>
+        <p class="small text-body-secondary">Shown on accepted quotations, e.g. your bank name, account number, branch code, and "use the quotation number as reference".</p>
+        <textarea class="form-control" id="payment_instructions" name="payment_instructions" rows="4" aria-label="Payment instructions"><?= $val('payment_instructions', $tenant['payment_instructions'] ?? '') ?></textarea>
+      </div>
+      <div class="panel mb-4">
         <h2 class="h6 text-uppercase text-body-secondary mb-1">Policies</h2>
         <p class="small text-body-secondary">Leave blank to show the platform's default POPIA-aligned summary under your company name. Have your own policies reviewed by a legal practitioner.</p>
         <div class="mb-3"><label class="form-label" for="privacy_text">Privacy policy</label><textarea class="form-control" id="privacy_text" name="privacy_text" rows="6"><?= $val('privacy_text', $tenant['privacy_text']) ?></textarea></div>

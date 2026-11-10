@@ -1,6 +1,6 @@
-<div class="container py-5" style="max-width:900px">
-  <a href="/account" class="small"><i class="bi bi-arrow-left"></i> My account</a>
-  <h1 class="h3 mt-2 mb-4">Profile & security</h1>
+<div class="container py-4" style="max-width:1000px">
+  <?= App\Core\View::partial('home/_nav', ['active' => '/account/profile']) ?>
+  <h1 class="h4 mb-4">Profile & security</h1>
   <?php require BASE_PATH . '/app/Views/partials/flash.php'; ?>
   <div class="row g-4">
     <div class="col-lg-6">

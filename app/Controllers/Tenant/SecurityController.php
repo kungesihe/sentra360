@@ -21,17 +21,6 @@ final class SecurityController extends Controller
         $this->view('security/' . $view, $data + ['me' => Auth::user(), 'portal' => 'security'], 'portal');
     }
 
-    public function dashboard(): void
-    {
-        $home = (int) DB::value('SELECT id FROM roles WHERE code = "homeowner"');
-        $stats = DB::one(
-            'SELECT COUNT(*) AS homeowners, SUM(status = "active") AS verified, SUM(client_status = "client") AS clients
-               FROM users WHERE tenant_id = ? AND role_id = ?',
-            [TenantContext::id(), $home]
-        );
-        $this->render('dashboard', ['title' => 'Security dashboard', 'stats' => $stats]);
-    }
-
     public function homeowners(): void
     {
         $this->render('homeowners', ['title' => 'Homeowners'] + AdminController::homeownerList());

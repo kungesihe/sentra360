@@ -12,17 +12,19 @@ Each login only works on its own page and only opens its own area.
 
 To serve a second company later, copy the app, give the copy its own database and change the name and logo. See [docs/NEW_COMPANY.md](docs/NEW_COMPANY.md).
 
-## What works now (Phase 1)
+## What works now (Phases 1–6)
 
-| Area | Status |
-|---|---|
-| Branded public site: welcome, services, emergency number, contact, privacy, terms | ✅ |
-| Homeowner sign-up with mobile code and email verification, sign-in by email or mobile, lockout, password reset, "sign out everywhere" | ✅ (SMS and email delivery not connected yet; see below) |
-| Admin: dashboard, homeowners (verify, suspend, mark as client), create and disable admin and security logins, branding (logo, colours, texts), audit log | ✅ |
-| Security company: dashboard, homeowner lookup, own password | ✅ |
-| POPIA: consent records, masked contact details in lists, logged access to records | ✅ |
-| Automated tests | ✅ 22 passing |
-| Incidents, property and vehicle applications, quotations, payments, panic button, live control room | ⏳ Phases 2–5 |
+| Area | Homeowner | Admin | Security company |
+|---|---|---|---|
+| **Incidents**: 22 crime/emergency categories, photos/video/documents, GPS, witnesses, injuries, reference numbers, honest status (submitted → received → assigned → in progress → resolved) | Report & track | Manage, search/filter, assign, notes | Live feed, respond, update, photos |
+| **Panic button**: clients only; hold 3 s (or confirm box), GPS + live location updates, silent/audible, extra info, emergency contacts; status shows submitted / seen by control room / acknowledged / dispatched / resolved | ✅ | Sees & manages | Live control room with map and alarm sound, acknowledge, dispatch |
+| **Residential & vehicle protection**: register multiple properties/vehicles, apply, assessment, quotation, acceptance, payment, activation → client | ✅ | Full workflow | — |
+| **Quotations**: line items, VAT, monthly/once-off, accept/decline, print/PDF | Accept/decline | Create, send, record payments | — |
+| **Services marketplace & bookings**: listings with prices or quote-on-request, request date/time/location/duration → quote → pay → confirmed | ✅ | Manage services & requests | — |
+| **Payments**: EFT instructions + manual recording; PayFast framework (needs keys) | History | Record, export | — |
+| **Community safety alerts**, **patrol log**, **notifications**, **reports** (incidents, response times, conversion, revenue, services) with **Excel (CSV) and PDF export**, **audit log** | ✅ | ✅ | ✅ |
+| Verification of mobile/email | Switched **off** for now (`REQUIRE_VERIFICATION=0`) | | |
+| Automated tests | 33 passing (incl. a smoke test of every page) | | |
 
 ## Quick start
 

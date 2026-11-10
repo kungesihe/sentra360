@@ -21,7 +21,7 @@ final class TenantContext
             self::$tenant = DB::one(
                 "SELECT t.*, s.display_name, s.logo_path, s.primary_color, s.secondary_color, s.welcome_message,
                         s.about, s.services_offered, s.contact_phone, s.contact_email AS public_email,
-                        s.physical_address, s.emergency_phone, s.emergency_notes, s.terms_text, s.privacy_text
+                        s.physical_address, s.emergency_phone, s.emergency_notes, s.terms_text, s.privacy_text, s.payment_instructions
                    FROM tenants t JOIN tenant_settings s ON s.tenant_id = t.id
                   ORDER BY t.id LIMIT 1"
             );

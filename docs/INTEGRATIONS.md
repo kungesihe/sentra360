@@ -6,8 +6,8 @@ The platform **never pretends** an external action happened. Without a configure
 |---|---|---|---|
 | **SMS gateway** (e.g. Clickatell, BulkSMS, SMSPortal) | Mobile OTP verification; later alerts and notifications | ❌ Not configured. Codes are recorded, not sent. | Account and API key (paid per SMS). An adapter must be added in `App\Core\Notifier`. |
 | **Email delivery** (SMTP, or a service such as Amazon SES, Mailgun or SendGrid) | Email verification, password reset | ❌ Not configured. Emails are recorded, not sent. | SMTP credentials or API key. An adapter must be added in `App\Core\Notifier`. |
-| **PayFast / Peach Payments** | Client payments (Phase 3) | ⏳ Phase 3 | The company's merchant account: merchant ID/key, passphrase, ITN/webhook URL. |
-| **Maps: Leaflet + OpenStreetMap tiles** | Incident and response maps (Phase 5) | ⏳ Phase 5 | Free for light use. OSM's tile policy forbids heavy commercial use, so production needs a paid tile provider (e.g. MapTiler, Stadia) with an API key. |
+| **PayFast** | Online payment of accepted quotations | ✅ Framework built, **inactive** until keys are set. Without it: EFT instructions + Admin records payments. | Merchant ID, merchant key, passphrase (set `PAYFAST_*` in Render). Notify URL: `https://<your-site>/payments/payfast/notify`. Test with `PAYFAST_SANDBOX=1` first. Peach Payments would need a second adapter. |
+| **Maps: Leaflet + OpenStreetMap tiles** | Control room map, incident maps | ✅ Working (free OSM tiles) | Fine for light use. OSM's tile policy forbids heavy commercial use, so at scale switch to a paid tile provider (e.g. MapTiler) with an API key. |
 | **TLS certificate** | `https://` for the app address | Deployment | Let's Encrypt (free) or a purchased certificate. |
 | **Web Push / browser notifications** | Security portal and homeowner alerts (Phase 4) | ⏳ Phase 4 | VAPID keys (free). Delivery depends on the browser being installed and permissions granted. |
 

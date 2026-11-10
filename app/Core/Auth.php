@@ -101,7 +101,11 @@ final class Auth
         if (password_needs_rehash($user['password_hash'], PASSWORD_DEFAULT)) {
             DB::update('users', ['password_hash' => password_hash($password, PASSWORD_DEFAULT)], ['id' => $user['id']]);
         }
-        DB::update('users', ['failed_login_count' => 0, 'locked_until' => null, 'last_login_at' => now()], ['id' => $user['id']]);
+        $changes = ['failed_login_count' => 0, 'locked_until' => null, 'last_login_at' => now()];
+        if ($user['status'] === 'pending' && !config('require_verification')) {
+            $changes['status'] = 'active'; // verification is switched off: pending accounts become active
+        }
+        DB::update('users', $changes, ['id' => $user['id']]);
         return ['ok' => true, 'user' => $user];
     }
 
@@ -174,6 +178,10 @@ final class Auth
               WHERE u.id = ? AND u.tenant_id = ?',
             [$a['id'], $a['tenant_id']]
         );
+        if ($u && $u['status'] === 'pending' && !config('require_verification')) {
+            DB::run('UPDATE users SET status = "active" WHERE id = ? AND status = "pending"', [$u['id']]);
+            $u['status'] = 'active';
+        }
         if ($u && !in_array($u['status'], ['suspended', 'disabled'], true)) {
             $u['portal'] = self::portalForRole($u['role_code']);
             self::$user = $u;

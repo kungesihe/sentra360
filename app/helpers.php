@@ -26,6 +26,9 @@ function config(string $key): mixed
             'sms_provider'  => env('SMS_PROVIDER'),
             'mail_from'     => env('MAIL_FROM', 'no-reply@example.com'),
             'policy_version'=> '2026-11',
+            // Mobile/email verification for homeowners. Off until SMS/email providers are connected.
+            'require_verification' => env('REQUIRE_VERIFICATION', '0') === '1',
+            'vat_rate'      => 0.15,
         ];
     }
     return $c[$key] ?? null;
@@ -74,6 +77,12 @@ function old(string $key, string $default = ''): string
 function money(int $cents): string
 {
     return 'R' . number_format($cents / 100, 0, '.', ' ');
+}
+
+/** Rand amount with cents, e.g. R1 250.00 */
+function money_exact(int $cents): string
+{
+    return 'R' . number_format($cents / 100, 2, '.', ' ');
 }
 
 function now(): string

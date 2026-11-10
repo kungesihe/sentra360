@@ -1,38 +1,44 @@
+<?php $O = App\Services\Ops::class; ?>
+<?php if ($ops['active_panics']): ?>
+  <a href="/admin/incidents?status=open" class="alert alert-danger d-flex align-items-center gap-2 text-decoration-none"><i class="bi bi-broadcast-pin fs-4"></i><strong><?= $ops['active_panics'] ?> active panic alert<?= $ops['active_panics'] > 1 ? 's' : '' ?></strong> · open the incident list</a>
+<?php endif; ?>
 <div class="row g-3 mb-4">
   <?php foreach ([
-    ['Homeowners', $stats['homeowners'] ?? 0, 'house-door'],
-    ['Verified', $stats['verified'] ?? 0, 'patch-check'],
-    ['Awaiting verification', $stats['pending'] ?? 0, 'hourglass-split'],
-    ['New this week', $stats['new_this_week'] ?? 0, 'graph-up-arrow'],
-    ['Active clients', $stats['clients'] ?? 0, 'shield-check'],
-    ['Security logins', $stats['security_staff'] ?? 0, 'shield-shaded'],
-  ] as [$label, $val, $ico]): ?>
-    <div class="col-6 col-md-4 col-xl-2"><div class="stat"><div class="label"><i class="bi bi-<?= $ico ?>"></i> <?= $label ?></div><div class="value"><?= (int) $val ?></div></div></div>
+    ['/admin/incidents?status=submitted', 'megaphone', 'New incident reports', $ops['new_incidents']],
+    ['/admin/incidents?status=open', 'activity', 'Open incidents', $ops['open_incidents']],
+    ['/admin/incidents?status=open', 'broadcast-pin', 'Active emergencies', $ops['active_panics']],
+    ['/admin/reports', 'exclamation-triangle', 'Panic alerts (30 days)', $ops['panics_30']],
+    ['/admin/applications?kind=property', 'house-check', 'Residential applications', $ops['prop_apps']],
+    ['/admin/applications?kind=vehicle', 'car-front', 'Vehicle applications', $ops['veh_apps']],
+    ['/admin/quotations?status=sent', 'file-earmark-text', 'Quotes awaiting acceptance', $ops['quotes_waiting']],
+    ['/admin/requests', 'bag-check', 'Service requests', $ops['requests']],
+    ['/admin/payments', 'cash-coin', 'Payments (30 days)', money((int) $ops['paid_30'])],
+    ['/admin/homeowners', 'people', 'Homeowners', $stats['homeowners'] ?? 0],
+    ['/admin/homeowners', 'shield-check', 'Active clients', $stats['clients'] ?? 0],
+    ['/admin/applications?status=active', 'house-lock', 'Protected properties / vehicles', $ops['active_props'] . ' / ' . $ops['active_vehicles']],
+  ] as [$href, $ico, $label, $val]): ?>
+    <div class="col-6 col-md-4 col-xl-3"><a href="<?= $href ?>" class="stat d-block text-decoration-none text-body"><div class="label"><i class="bi bi-<?= $ico ?>"></i> <?= $label ?></div><div class="value"><?= e($val) ?></div></a></div>
   <?php endforeach; ?>
 </div>
 <div class="row g-4">
   <div class="col-lg-7">
     <div class="table-card">
-      <div class="d-flex justify-content-between align-items-center p-3 border-bottom"><h2 class="h6 mb-0">Latest homeowner registrations</h2><a href="/admin/homeowners" class="small">View all</a></div>
-      <table class="table">
-        <tbody>
-        <?php foreach ($recent as $r): ?>
-          <tr><td><a href="/admin/homeowners/<?= (int) $r['id'] ?>"><?= e($r['first_name'] . ' ' . $r['surname']) ?></a></td><td><?= status_badge($r['status']) ?></td><td class="text-end small text-body-secondary"><?= e(date('j M, H:i', strtotime($r['created_at']))) ?></td></tr>
+      <div class="d-flex justify-content-between align-items-center p-3 border-bottom"><h2 class="h6 mb-0">Latest incidents</h2><a href="/admin/incidents" class="small">All incidents</a></div>
+      <table class="table mb-0"><tbody>
+        <?php foreach ($latestIncidents as $i): ?>
+          <tr><td><a href="/admin/incidents/<?= (int) $i['id'] ?>" class="fw-semibold"><?= e($i['reference']) ?></a><div class="small text-body-secondary"><?= e($i['title']) ?></div></td><td><?= $O::badge($i['priority']) ?></td><td><?= $O::badge($i['status']) ?></td><td class="small text-body-secondary text-end"><?= e(date('j M H:i', strtotime($i['created_at']))) ?></td></tr>
         <?php endforeach; ?>
-        <?php if (!$recent): ?><tr><td class="text-body-secondary p-4">No registrations yet. Share <strong><?= e(app_url('/register')) ?></strong> with your community.</td></tr><?php endif; ?>
-        </tbody>
-      </table>
+        <?php if (!$latestIncidents): ?><tr><td class="p-3 text-body-secondary">No incidents reported yet.</td></tr><?php endif; ?>
+      </tbody></table>
     </div>
   </div>
   <div class="col-lg-5">
-    <div class="panel">
-      <h2 class="h6 mb-3">The three logins</h2>
-      <dl class="small mb-0">
-        <dt><i class="bi bi-house-door"></i> Homeowner</dt><dd>Residents and clients sign themselves up at <a href="/register">/register</a> and sign in at <a href="/login">/login</a>.</dd>
-        <dt><i class="bi bi-building"></i> Admin</dt><dd>Company office: full control, at <a href="/admin/login">/admin/login</a>.</dd>
-        <dt><i class="bi bi-shield-shaded"></i> Security company</dt><dd class="mb-2">Control room and officers, at <a href="/security/login">/security/login</a>.</dd>
-      </dl>
-      <a href="/admin/staff" class="btn btn-sm btn-outline-dark">Manage admin & security logins</a>
+    <div class="table-card">
+      <div class="d-flex justify-content-between align-items-center p-3 border-bottom"><h2 class="h6 mb-0">New homeowners</h2><a href="/admin/homeowners" class="small">View all</a></div>
+      <table class="table mb-0"><tbody>
+        <?php foreach ($recent as $r): ?><tr><td><a href="/admin/homeowners/<?= (int) $r['id'] ?>"><?= e($r['first_name'] . ' ' . $r['surname']) ?></a></td><td class="text-end small text-body-secondary"><?= e(date('j M, H:i', strtotime($r['created_at']))) ?></td></tr><?php endforeach; ?>
+        <?php if (!$recent): ?><tr><td class="text-body-secondary p-3">No registrations yet. Share <strong><?= e(app_url('/register')) ?></strong>.</td></tr><?php endif; ?>
+      </tbody></table>
     </div>
   </div>
 </div>

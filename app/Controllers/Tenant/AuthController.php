@@ -60,8 +60,9 @@ final class AuthController extends Controller
             $this->backWithErrors('/register', $v->errors);
         }
         $roleId = (int) DB::value('SELECT id FROM roles WHERE code = "homeowner"');
-        $userId = DB::transaction(function () use ($tid, $roleId, $v, $pw) {
-            $id = UserService::create($tid, $roleId, array_merge($v->clean, ['password' => $pw]), 'pending');
+        $verify = (bool) config('require_verification');
+        $userId = DB::transaction(function () use ($tid, $roleId, $v, $pw, $verify) {
+            $id = UserService::create($tid, $roleId, array_merge($v->clean, ['password' => $pw]), $verify ? 'pending' : 'active');
             DB::insert('consents', [
                 'tenant_id' => $tid, 'user_id' => $id, 'consent_type' => 'terms_privacy',
                 'document_version' => config('policy_version'), 'granted' => 1, 'ip_address' => client_ip(),
@@ -75,6 +76,11 @@ final class AuthController extends Controller
             return $id;
         });
         Audit::log('user.registered', 'user', $userId, [], $tid, 'guest');
+        if (!$verify) {
+            Auth::startSession($userId, $tid);
+            flash('success', 'Welcome! Your account is ready.');
+            redirect('/account');
+        }
         $user = UserService::find($tid, $userId);
         $t = TenantContext::current();
         $_SESSION['delivery'] = [

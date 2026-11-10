@@ -46,7 +46,21 @@ final class AdminController extends Controller
               WHERE u.tenant_id = ? AND u.role_id = ? ORDER BY u.id DESC LIMIT 6',
             [$tid, $home]
         );
-        $this->render('dashboard', ['title' => 'Dashboard', 'stats' => $stats, 'recent' => $recent]);
+        $ops = [
+            'new_incidents' => (int) DB::value('SELECT COUNT(*) FROM incidents WHERE tenant_id = ? AND status = "submitted"', [$tid]),
+            'open_incidents' => (int) DB::value('SELECT COUNT(*) FROM incidents WHERE tenant_id = ? AND status NOT IN ("resolved","closed")', [$tid]),
+            'active_panics' => (int) DB::value('SELECT COUNT(*) FROM panic_alerts WHERE tenant_id = ? AND status NOT IN ("resolved","cancelled")', [$tid]),
+            'panics_30' => (int) DB::value('SELECT COUNT(*) FROM panic_alerts WHERE tenant_id = ? AND created_at >= NOW() - INTERVAL 30 DAY', [$tid]),
+            'prop_apps' => (int) DB::value('SELECT COUNT(*) FROM property_applications WHERE tenant_id = ? AND status NOT IN ("draft","active","rejected","cancelled")', [$tid]),
+            'veh_apps' => (int) DB::value('SELECT COUNT(*) FROM vehicle_applications WHERE tenant_id = ? AND status NOT IN ("draft","active","rejected","cancelled")', [$tid]),
+            'quotes_waiting' => (int) DB::value('SELECT COUNT(*) FROM quotations WHERE tenant_id = ? AND status = "sent"', [$tid]),
+            'requests' => (int) DB::value('SELECT COUNT(*) FROM service_requests WHERE tenant_id = ? AND status IN ("submitted","under_review")', [$tid]),
+            'paid_30' => (int) DB::value('SELECT COALESCE(SUM(amount_cents),0) FROM payments WHERE tenant_id = ? AND status = "paid" AND paid_at >= NOW() - INTERVAL 30 DAY', [$tid]),
+            'active_props' => (int) DB::value('SELECT COUNT(*) FROM registered_properties WHERE tenant_id = ? AND protection_status = "active"', [$tid]),
+            'active_vehicles' => (int) DB::value('SELECT COUNT(*) FROM registered_vehicles WHERE tenant_id = ? AND protection_status = "active"', [$tid]),
+        ];
+        $latestIncidents = DB::all('SELECT id, reference, title, priority, status, created_at FROM incidents WHERE tenant_id = ? ORDER BY id DESC LIMIT 6', [$tid]);
+        $this->render('dashboard', ['title' => 'Dashboard', 'stats' => $stats, 'recent' => $recent, 'ops' => $ops, 'latestIncidents' => $latestIncidents]);
     }
 
     // ------------------------------------------------------------- branding
@@ -64,6 +78,7 @@ final class AdminController extends Controller
             'services_offered' => 'max:3000', 'primary_color' => 'required,color', 'secondary_color' => 'required,color',
             'contact_phone' => 'max:30', 'contact_email' => 'email,max:190', 'physical_address' => 'max:255',
             'emergency_phone' => 'max:30', 'emergency_notes' => 'max:500', 'terms_text' => 'max:60000', 'privacy_text' => 'max:60000',
+            'payment_instructions' => 'max:3000',
         ]);
         $logo = Upload::imageData($_FILES['logo'] ?? []);
         if (isset($logo['error'])) {

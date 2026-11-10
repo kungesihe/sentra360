@@ -18,7 +18,24 @@ final class AccountController extends Controller
     public function dashboard(): void
     {
         $u = Auth::user();
-        $this->view('tenant/account/dashboard', ['title' => 'My account', 'user' => $u], 'tenant');
+        $tid = TenantContext::id();
+        $uid = (int) $u['id'];
+        $counts = [
+            'incidents' => (int) DB::value('SELECT COUNT(*) FROM incidents WHERE tenant_id = ? AND reporter_id = ? AND source = "community"', [$tid, $uid]),
+            'applications' => count(HomeAssetsController::myApplications($uid)),
+            'quotations' => (int) DB::value('SELECT COUNT(*) FROM quotations WHERE tenant_id = ? AND customer_id = ? AND status = "sent"', [$tid, $uid]),
+            'bookings' => (int) DB::value('SELECT COUNT(*) FROM service_requests WHERE tenant_id = ? AND customer_id = ? AND status NOT IN ("cancelled","rejected","completed")', [$tid, $uid]),
+        ];
+        $this->view('tenant/account/dashboard', [
+            'title' => 'My account', 'user' => $u, 'counts' => $counts,
+            'panicEligible' => \App\Services\Incidents::panicEligible($u),
+            'activePanic' => DB::one('SELECT reference, status FROM panic_alerts WHERE tenant_id = ? AND customer_id = ? AND status NOT IN ("resolved","cancelled") ORDER BY id DESC LIMIT 1', [$tid, $uid]),
+            'alerts' => DB::all('SELECT * FROM safety_alerts WHERE tenant_id = ? AND (expires_at IS NULL OR expires_at > NOW()) ORDER BY id DESC LIMIT 3', [$tid]),
+            'recentIncidents' => DB::all('SELECT id, reference, title, status, created_at FROM incidents WHERE tenant_id = ? AND reporter_id = ? ORDER BY id DESC LIMIT 4', [$tid, $uid]),
+            'applications' => array_slice(HomeAssetsController::myApplications($uid), 0, 4),
+            'pendingQuotes' => DB::all('SELECT id, reference, total_cents FROM quotations WHERE tenant_id = ? AND customer_id = ? AND status = "sent" ORDER BY id DESC', [$tid, $uid]),
+            'verify' => (bool) config('require_verification'),
+        ], 'tenant');
     }
 
     public function verifyForm(): void

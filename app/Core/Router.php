@@ -21,10 +21,16 @@ final class Router
         $this->add('POST', $path, $handler, $mw);
     }
 
-    public function add(string $method, string $path, array $handler, array $mw = []): void
+    /** POST without CSRF: only for server-to-server callbacks that verify themselves (e.g. PayFast ITN). */
+    public function postExternal(string $path, array $handler): void
+    {
+        $this->add('POST', $path, $handler, [], false);
+    }
+
+    public function add(string $method, string $path, array $handler, array $mw = [], bool $csrf = true): void
     {
         $regex = '#^' . preg_replace('#\{([a-z_]+)\}#', '(?P<$1>[A-Za-z0-9_-]+)', rtrim($path, '/') ?: '/') . '$#';
-        $this->routes[] = compact('method', 'regex', 'handler', 'mw');
+        $this->routes[] = compact('method', 'regex', 'handler', 'mw', 'csrf');
     }
 
     public function dispatch(string $method, string $path): void
@@ -40,7 +46,7 @@ final class Router
                 continue;
             }
             $params = array_filter($m, 'is_string', ARRAY_FILTER_USE_KEY);
-            if ($method === 'POST') {
+            if ($method === 'POST' && $r['csrf']) {
                 Csrf::verify();
             }
             foreach ($r['mw'] as $mw) {
