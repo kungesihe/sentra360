@@ -59,16 +59,15 @@ $mkApp = function (string $kind, int $assetId, int $applicant, array $services, 
     DB::insert('workflow_events', ['tenant_id' => $tid, 'subject_type' => $kind . '_application', 'subject_id' => $id, 'to_status' => 'submitted', 'note' => 'Application submitted.', 'created_at' => $created]);
     return $id;
 };
-$appActive = $mkApp('property', $prop1, $lerato, ['Home protection plan', 'Alarm monitoring'], 'active', $ago('-45 days'));
+$appActive = $mkApp('property', $prop1, $lerato, ['Home protection plan'], 'active', $ago('-45 days'));
 $appVeh = $mkApp('vehicle', $veh1, $lerato, ['Vehicle tracking plan'], 'submitted', $ago('-2 hours'));
-$appSipho = $mkApp('property', $prop2, $sipho, ['Business alarm plan', 'CCTV installation'], 'submitted', $ago('-1 day'));
+$appSipho = $mkApp('property', $prop2, $sipho, ['Business alarm plan'], 'submitted', $ago('-1 day'));
 $appAnika = $mkApp('property', $prop3, $anika, ['Home protection plan'], 'submitted', $ago('-3 days'));
 
 // Quotation sent to Sipho (awaiting acceptance)
 $q1 = Workflow::createQuotation('property', Workflow::application('property', $appSipho), [
     ['description' => 'Business alarm plan (per month)', 'quantity' => 1, 'unit_cents' => 85000],
     ['description' => 'Alarm supply and installation (once-off, first payment only)', 'quantity' => 1, 'unit_cents' => 350000],
-    ['description' => 'CCTV installation: 4 cameras (once-off)', 'quantity' => 1, 'unit_cents' => 750000],
 ], 'monthly', date('Y-m-d', strtotime('+14 days')), 'Includes free security assessment. 12-month agreement.', true, true, $admin);
 // Anika: quotation accepted and paid, waiting for activation
 $q2 = Workflow::createQuotation('property', Workflow::application('property', $appAnika), [
@@ -83,8 +82,8 @@ $vip = (int) DB::value('SELECT id FROM services WHERE name = "VIP escort"');
 DB::update('services', ['pricing' => 'from', 'price_cents' => 85000, 'price_unit' => 'per hour'], ['id' => $vip]);
 $event = (int) DB::value('SELECT id FROM services WHERE name = "Private event security"');
 DB::update('services', ['pricing' => 'from', 'price_cents' => 350000, 'price_unit' => 'per event'], ['id' => $event]);
-$assess = (int) DB::value('SELECT id FROM services WHERE name = "Security assessment"');
-DB::update('services', ['pricing' => 'fixed', 'price_cents' => 95000, 'price_unit' => 'once-off'], ['id' => $assess]);
+$guards = (int) DB::value('SELECT id FROM services WHERE name = "On-site guards"');
+DB::update('services', ['pricing' => 'from', 'price_cents' => 90000, 'price_unit' => 'per shift'], ['id' => $guards]);
 $req1 = DB::insert('service_requests', ['tenant_id' => $tid, 'reference' => Ops::reference('SRV', 'service_requests'), 'service_id' => $event, 'customer_id' => $lerato,
     'requested_date' => date('Y-m-d', strtotime('next saturday')), 'requested_time' => '18:00:00', 'location_text' => '1452 Block L, Soshanguve', 'duration_text' => '18:00 to 00:00', 'instructions' => '50th birthday party, about 80 guests. Need 3 guards and parking control.', 'status' => 'submitted']);
 Ops::event('service_request', $req1, null, 'submitted', 'Request submitted.');

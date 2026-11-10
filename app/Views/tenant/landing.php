@@ -88,7 +88,7 @@ $home = $u ? App\Core\Auth::PORTALS[$u['portal']][2] : null;
       <?php endforeach; ?>
     </div>
     <p class="text-center text-body-secondary small mt-4 mb-0">
-      <a href="/pricelist">Full price list</a> · <a href="/services">Once-off services</a><br>
+      <a href="/services">All services &amp; prices</a><br>
       In a life-threatening emergency, also call SAPS on <a href="tel:10111">10111</a> or an ambulance on <a href="tel:10177">10177</a>.
     </p>
   </div>

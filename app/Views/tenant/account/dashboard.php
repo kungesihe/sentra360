@@ -68,7 +68,7 @@
               </p>
             </div>
           </div>
-          <a href="/account/pricelist" class="btn btn-link btn-sm px-0">Prices</a>
+          <a href="/account/services" class="btn btn-link btn-sm px-0">Prices</a>
         </div>
         <?php if ($assets): ?>
           <ul class="list-unstyled mb-2 mt-3 border-top pt-1">

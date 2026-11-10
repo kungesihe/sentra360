@@ -242,7 +242,7 @@ T::test('Reports and Excel exports are admin-only, and exports neutralise spread
 T::test('Smoke test: every page of all three portals loads', function () {
     $pages = [
         'homeowner' => ['/account', '/account/incidents', '/account/incidents/new', '/account/assets/property', '/account/assets/property/new',
-            '/account/assets/vehicle', '/account/assets/vehicle/new', '/account/applications', '/account/services', '/account/pricelist', '/account/requests',
+            '/account/assets/vehicle', '/account/assets/vehicle/new', '/account/applications', '/account/services', '/account/requests',
             '/account/quotations', '/account/payments', '/account/contacts', '/account/notifications', '/account/profile', '/account/panic'],
         'admin' => ['/admin', '/admin/incidents', '/admin/incidents/new', '/admin/applications', '/admin/applications?status=all', '/admin/quotations',
             '/admin/requests', '/admin/requests?status=all', '/admin/services/new', '/admin/pricelist', '/admin/payments', '/admin/homeowners',
@@ -372,7 +372,7 @@ T::test('Price list: admin edits every price in one place; public and homeowners
     T::eq($before, (int) DB::value('SELECT COUNT(*) FROM services WHERE tenant_id = ?', [$tid]), 'no service was deleted');
 
     $pub = new Http(T::HOST);
-    $pub->get('/pricelist');
+    $pub->get('/services');
     T::contains('R450.00', $pub->body, 'public price list shows the new price');
     T::notContains('CCTV install test', $pub->body, 'hidden service not listed publicly');
 
@@ -427,7 +427,7 @@ T::test('Protection plans: home, business and vehicle each get the right monthly
     $h->post('/account/assets/property', ['name' => 'Spaza', 'property_type' => 'Business premises', 'address' => '12 Block H', 'suburb' => 'Soshanguve Block H', 'city' => 'Pretoria',
         'apply' => 1, 'extras' => ['Not a real extra']]);
     $app = DB::one('SELECT * FROM property_applications WHERE applicant_id = ? ORDER BY id DESC', [$home['id']]);
-    T::eq(['Business alarm plan'], json_decode($app['services_requested'], true), 'business gets the business alarm plan; unknown extras ignored');
+    T::eq(['Business alarm plan'], json_decode($app['services_requested'], true), 'business gets the business alarm plan, nothing else');
 
     $h->get('/account/assets/property/new');
     $h->post('/account/assets/property', ['name' => 'Home', 'property_type' => 'House', 'address' => '1 Block L', 'suburb' => 'Soshanguve Block L', 'city' => 'Pretoria', 'apply' => 1]);
@@ -452,8 +452,8 @@ T::test('Protection plans: home, business and vehicle each get the right monthly
     $pub = new Http(T::HOST);
     $pub->get('/');
     T::contains('Protection plans', $pub->body, 'landing page shows the plans');
-    $pub->get('/pricelist');
-    T::contains('Monthly protection plans', $pub->body, 'price list leads with the plans');
+    $pub->get('/services');
+    T::contains('Monthly protection', $pub->body, 'services page leads with the plans');
 });
 
 T::test('Panic call-back: control room calls back on WhatsApp and the person sees it', function () {
@@ -534,41 +534,35 @@ T::test('EFT proof of payment: customer uploads, admin approves or rejects, prot
     @unlink($pdf);
 });
 
-T::test('No duplicates: one services screen; extras only on plans that do not include them', function () {
+T::test('Simple and no duplicates: one admin screen, one customer page, monthly plans first then once-off', function () {
     $tid = T::$companyId;
-    $mk = fn(string $name, string $cat, ?string $for) => (int) DB::insert('services', ['tenant_id' => $tid, 'name' => $name, 'category' => $cat, 'description' => 'Test.', 'pricing' => 'quote', 'addon_for' => $for]);
-    $monitor = $mk('Alarm monitoring T', 'Add-ons', 'home');
-    $cctv = $mk('CCTV installation T', 'Installations', 'home,business');
-    $escort = $mk('Escort T', 'Specialised', 'vehicle');
+    $guards = (int) DB::insert('services', ['tenant_id' => $tid, 'name' => 'Guards T', 'category' => 'Guarding', 'description' => 'Test.', 'pricing' => 'from', 'price_cents' => 90000, 'price_unit' => 'per shift']);
+    $hidden = (int) DB::insert('services', ['tenant_id' => $tid, 'name' => 'Alarm monitoring T', 'category' => 'Add-ons', 'description' => 'Test.', 'pricing' => 'quote', 'is_active' => 0]);
 
     $admin = T::login(T::user('admin'));
     $admin->get('/admin/services');
     T::eq(301, $admin->status, 'old services list is gone');
     T::redirectsTo('/admin/pricelist', $admin, 'it moved to Services & prices');
     $admin->get('/admin/pricelist');
-    T::contains('Services &amp; prices', $admin->body, 'one combined screen');
-    T::contains('name="addon[' . $monitor . '][]"', $admin->body, 'extras are set per plan on the same screen');
+    T::true(strpos($admin->body, 'Monthly plans') < strpos($admin->body, 'Once-off services'), 'admin: monthly plans first, once-off below');
+    T::notContains('Extra on', $admin->body, 'no extras to manage');
+
+    $pub = new Http(T::HOST);
+    $pub->get('/pricelist');
+    T::eq(301, $pub->status, 'old price list address');
+    T::redirectsTo('/services', $pub, 'goes to the one services page');
+    $pub->get('/services');
+    T::true(strpos($pub->body, 'Monthly protection') < strpos($pub->body, 'When you need us'), 'customer: monthly on top, once-off at the bottom');
+    T::contains('Guards T', $pub->body, 'once-off personnel service listed with a Book button');
+    T::notContains('Alarm monitoring T', $pub->body, 'hidden services stay hidden');
 
     $home = T::user('homeowner');
     $h = T::login($home);
-    $h->get('/account/assets/property/new?type=business');
-    T::contains('CCTV installation T', $h->body, 'business can add CCTV');
-    $h->post('/account/assets/property', ['name' => 'Shop', 'property_type' => 'Business premises', 'address' => '3 Block H', 'suburb' => 'Soshanguve Block H', 'city' => 'Pretoria',
-        'apply' => 1, 'extras' => ['Alarm monitoring T', 'CCTV installation T']]);
-    $app = DB::one('SELECT * FROM property_applications WHERE applicant_id = ? ORDER BY id DESC', [$home['id']]);
-    T::eq(['Business alarm plan', 'CCTV installation T'], json_decode($app['services_requested'], true), 'business plan already monitors the alarm, so that extra is dropped');
-
-    $h->get('/account/assets/vehicle/new');
-    T::notContains('CCTV installation T', $h->body, 'cars are not offered house extras');
-    T::contains('Escort T', $h->body, 'cars get vehicle extras');
-
-    $h->get('/account/services/' . $monitor);
-    T::eq(404, $h->status, 'monthly add-ons are added to a plan, not booked on their own');
-    $h->get('/account/services/' . $cctv);
-    T::eq(200, $h->status, 'once-off installations can still be booked');
-
-    $admin->get('/admin/pricelist');
-    $admin->post('/admin/pricelist', ['pricing' => [$monitor => 'quote'], 'addon' => [$monitor => ['home', 'business', 'nonsense']], 'active' => [$monitor => 1]]);
-    T::eq('home,business', DB::value('SELECT addon_for FROM services WHERE id = ?', [$monitor]), 'admin changes which plans offer an extra');
-    DB::run('DELETE FROM services WHERE id IN (?, ?, ?)', [$monitor, $cctv, $escort]);
+    $h->get('/account/assets/property/new');
+    T::notContains('Optional extras', $h->body, 'no extras when signing up');
+    $h->get('/account/services/' . $hidden);
+    T::eq(404, $h->status, 'hidden services cannot be booked');
+    $h->get('/account/services/' . $guards);
+    T::eq(200, $h->status, 'once-off services can be booked');
+    DB::run('DELETE FROM services WHERE id IN (?, ?)', [$guards, $hidden]);
 });

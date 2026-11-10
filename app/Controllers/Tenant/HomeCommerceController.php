@@ -38,14 +38,14 @@ final class HomeCommerceController extends Controller
 
     public function services(): void
     {
-        $this->render('services', ['title' => 'Services', 'services' => self::activeServices()]);
+        $this->render('services', ['title' => 'Services & prices', 'services' => self::activeServices()]);
     }
 
-    /** Printable price list: plans, add-ons and once-off services (public and inside the app). */
+    /** Old price list address: now part of the one Services & prices page. */
     public function pricelist(): void
     {
-        $all = DB::all('SELECT * FROM services WHERE tenant_id = ? AND is_active = 1 AND plan_for IS NULL ORDER BY category, sort_order, name', [TenantContext::id()]);
-        $this->render('pricelist', ['title' => 'Price list', 'services' => $all]);
+        // One page for services and prices.
+        redirect(Auth::user() ? '/account/services' : '/services', 301);
     }
 
     public function serviceShow(string $id): void

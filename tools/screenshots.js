@@ -24,8 +24,7 @@ const users = {
 // [section, user, path, title, explanation, phone?]
 const P = [
   ['Public site', 'public', '/', 'Community home page', 'A simple, community-first welcome for Soshanguve: "Safer streets start with neighbours", live safety alerts, the 24/7 emergency number and three steps to join.', true],
-  ['Public site', 'public', '/services', 'Services marketplace (public)', 'Anyone can browse the security services on offer, with prices or "quotation required". Booking needs a free account.', true],
-  ['Public site', 'public', '/pricelist', 'Price list', 'Every listed service with its price, home protection first. Printable, and also inside the app under Services.', true],
+  ['Public site', 'public', '/services', 'Services & prices', 'One page for everything: the three monthly protection plans on top, then once-off services where our people are needed (guards, events, escorts) with a Book button. Printable.', true],
   ['Public site', 'public', '/login', 'One sign-in for everyone', 'Residents, the company office and security officers all sign in here. The app recognises the account and opens the right area automatically.', true],
   ['Public site', 'public', '/register', 'Create a homeowner account', 'Residents join for free with name, mobile, email and password, and give POPIA consent. Accounts are active immediately (verification is switched off for now).', true],
   ['Public site', 'public', '/privacy', 'Privacy policy', 'POPIA-aligned privacy notice in the company\'s name. The Admin can replace it with their own policy.', false],
@@ -63,7 +62,7 @@ const P = [
   ['Admin', 'admin', `/admin/quotations/new/property/${ids.app_sipho}`, 'Prepare a quotation', 'Line items, quantities, prices, monthly or once-off, validity and VAT. Save a draft or send it to the customer.', false],
   ['Admin', 'admin', `/admin/quotations/${ids.quote_anika}`, 'Quotation & payments', 'The printable quotation, its status, and recording EFT, cash or card payments against it.', false],
   ['Admin', 'admin', '/admin/requests', 'Service requests & bookings', 'Incoming bookings by date, to review, quote, confirm and complete.', false],
-  ['Admin', 'admin', '/admin/pricelist', 'Services & prices', 'One screen for every service and its price: the three monthly plans with their once-off setup fee, then add-ons and once-off services. "Extra on" sets which plans can add each extra, so a plan never offers what it already includes.', false],
+  ['Admin', 'admin', '/admin/pricelist', 'Services & prices (admin)', 'One screen: monthly plans (price + once-off setup) first, then once-off services. Untick Listed to hide one; nothing is deleted.', false],
   ['Admin', 'admin', '/admin/payments', 'Payments & proofs of payment', 'Customers pay by EFT and upload proof of payment. The Admin checks each proof against the bank statement and approves (activating the plan) or rejects it with a reason. All payments export to Excel.', false],
   ['Admin', 'admin', '/admin/homeowners', 'Homeowners', 'All homeowners with status and client type. Verify, suspend or mark as client from each record.', false],
   ['Admin', 'admin', '/admin/leads', 'Leads', 'Community members who reported incidents or pressed panic but are not clients yet. One click sends a protection offer into their app (at most once every 14 days).', false],

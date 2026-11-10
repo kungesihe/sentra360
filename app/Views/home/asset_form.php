@@ -1,4 +1,4 @@
-<?php $isProp = $kind === 'property'; $o = $_SESSION['_old'] ?? []; $chosen = (array) ($o['extras'] ?? []); $asset ??= null; $presetType ??= null; $extrasByType ??= [];
+<?php $isProp = $kind === 'property'; $o = $_SESSION['_old'] ?? []; $asset ??= null; $presetType ??= null;
 $isBiz = ($o['property_type'] ?? $asset['property_type'] ?? $presetType) === App\Services\Plans::BUSINESS_TYPE;
 $v = fn(string $k, string $d = '') => $o ? old($k) : e((string) ($asset[$k] ?? $d)); ?>
 <div class="container py-4" style="max-width:900px">
@@ -44,16 +44,6 @@ $v = fn(string $k, string $d = '') => $o ? old($k) : e((string) ($asset[$k] ?? $
         <?php if (!$plans): ?><div class="col-12 small text-body-secondary">Plans are being set up. Save this now and we'll contact you.</div><?php endif; ?>
       </div>
       <div class="form-check form-switch mb-3"><input class="form-check-input" type="checkbox" role="switch" id="apply" name="apply" value="1"<?= !$o || !empty($o['apply']) ? ' checked' : '' ?>><label class="form-check-label fw-semibold" for="apply">Yes, sign me up for this plan</label></div>
-      <?php foreach ($extrasByType as $type => $extras): if (!$extras || ($type === 'vehicle') === $isProp) continue; ?>
-        <div class="<?= $isProp && ($type === 'business') !== $isBiz ? 'd-none' : '' ?>" data-plan-for="<?= e($type) ?>">
-          <div class="small fw-semibold mb-1">Optional extras</div>
-          <div class="row g-1">
-            <?php foreach ($extras as $i => $x): ?>
-              <div class="col-sm-6"><div class="form-check small"><input class="form-check-input" type="checkbox" name="extras[]" value="<?= e($x['name']) ?>" id="x<?= e($type) . $i ?>"<?= in_array($x['name'], $chosen, true) ? ' checked' : '' ?>><label class="form-check-label" for="x<?= e($type) . $i ?>"><?= e($x['name']) ?> <span class="text-body-secondary">· <?= strip_tags(App\Core\View::partial('shared/price', ['s' => $x])) ?></span></label></div></div>
-            <?php endforeach; ?>
-          </div>
-        </div>
-      <?php endforeach; ?>
       <textarea class="form-control mt-3" name="notes" rows="2" placeholder="Anything we should know (optional)"><?= old('notes') ?></textarea>
       <p class="small text-body-secondary mt-2 mb-0">We confirm your details<?= $isProp ? '' : ' and book the tracker fitting' ?>, send a quotation to accept in the app, and your protection starts once it's paid.</p>
     </div>

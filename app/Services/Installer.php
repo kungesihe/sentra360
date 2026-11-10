@@ -103,28 +103,21 @@ final class Installer
             return;
         }
         $list = [
-            ['Alarm monitoring', 'Add-ons', '24/7 monitoring of your alarm system by our control room.', 'per month', 'home'],
-            ['Security patrols', 'Add-ons', 'Scheduled and random patrols of your street or estate.', 'per month', 'home,business'],
-            ['VIP escort', 'Specialised', 'Trained close-protection officers for VIP movements.', 'per hour', null],
-            ['Executive protection', 'Specialised', 'Executive close protection for business travel and events.', 'per day', null],
-            ['Personal security escort', 'Specialised', 'An officer accompanies you to and from a location.', 'per trip', 'vehicle'],
-            ['Private event security', 'Events', 'Access control and guarding for private functions.', 'per event', null],
-            ['Home event protection', 'Events', 'Guards and parking control for parties and gatherings at home.', 'per event', null],
-            ['On-site guards (business)', 'Add-ons', 'Guarding and access control for business premises.', 'per month', 'business'],
-            ['Security assessment', 'Assessments', 'An on-site risk assessment with written recommendations.', 'once-off', 'home,business'],
-            ['CCTV installation', 'Installations', 'Supply and installation of CCTV cameras and recording.', 'once-off', 'home,business'],
-            ['Alarm installation', 'Installations', 'Supply and installation of an alarm system.', 'once-off', 'home'],
-            ['Access control', 'Installations', 'Gate motors, intercoms, biometric and card access.', 'once-off', 'home,business'],
-            ['Electric fencing', 'Installations', 'Compliant electric fence installation and certification.', 'once-off', 'home,business'],
+            ['On-site guards', 'Guarding', 'Trained guards at your home, business or site, booked by the shift.', 'per shift'],
+            ['Private event security', 'Events', 'Access control and guarding for private functions.', 'per event'],
+            ['Home event protection', 'Events', 'Guards and parking control for parties and gatherings at home.', 'per event'],
+            ['Personal security escort', 'Escorts', 'An officer accompanies you to and from a location.', 'per trip'],
+            ['VIP escort', 'Escorts', 'Trained close-protection officers for VIP movements.', 'per hour'],
+            ['Executive protection', 'Escorts', 'Executive close protection for business travel and events.', 'per day'],
         ];
-        foreach ($list as $i => [$name, $cat, $desc, $unit, $addonFor]) {
+        foreach ($list as $i => [$name, $cat, $desc, $unit]) {
             DB::insert('services', [
                 'tenant_id' => $tenantId, 'name' => $name, 'category' => $cat, 'description' => $desc,
                 'pricing' => 'quote', 'price_unit' => $unit, 'service_area' => area()['name'] . ' and surrounding areas',
-                'availability_text' => 'Book at least 48 hours ahead', 'sort_order' => $i, 'addon_for' => $addonFor,
+                'availability_text' => 'Book at least 48 hours ahead', 'sort_order' => $i,
             ]);
         }
-        $out('  starter services added (quotation required; edit them under Admin → Sales → Services & prices)');
+        $out('  once-off services added (quotation required; set prices in Admin → Sales → Services & prices)');
     }
 
     /** Create the company record from .env (only if none exists yet). */

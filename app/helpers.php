@@ -96,7 +96,7 @@ function nav_groups(string $portal): array
             ['/account', 'house', 'Home', []],
             ['/account/incidents', 'megaphone', 'Reports', [['/account/incidents', 'My reports'], ['/account/incidents/new', 'Report an incident']]],
             ['/account/assets/property', 'shield-check', 'Protection', [['/account/assets/property', 'Home & business'], ['/account/assets/vehicle', 'Vehicles'], ['/account/applications', 'Plan requests']]],
-            ['/account/services', 'bag-check', 'Services', [['/account/services', 'Browse'], ['/account/pricelist', 'Price list'], ['/account/requests', 'My bookings'], ['/account/quotations', 'Quotations'], ['/account/payments', 'Payments']]],
+            ['/account/services', 'bag-check', 'Services', [['/account/services', 'Services & prices'], ['/account/requests', 'My bookings'], ['/account/quotations', 'Quotations'], ['/account/payments', 'Payments']]],
             ['/account/profile', 'person', 'Account', [['/account/profile', 'Profile'], ['/account/contacts', 'Emergency contacts'], ['/account/notifications', 'Notifications']]],
         ],
         'admin' => [

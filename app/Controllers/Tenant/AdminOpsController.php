@@ -286,7 +286,6 @@ final class AdminOpsController extends Controller
                 'is_active' => empty($_POST['active'][$id]) ? 0 : 1,
                 'sort_order' => max(0, min(999, (int) ($_POST['sort'][$id] ?? $s['sort_order']))),
                 'setup_cents' => $s['plan_for'] ? Ops::cents((string) ($_POST['setup'][$id] ?? '')) : $s['setup_cents'],
-                'addon_for' => $s['plan_for'] ? null : Plans::addonValue((array) ($_POST['addon'][$id] ?? [])),
             ];
         }
         if ($errors) {
@@ -328,7 +327,6 @@ final class AdminOpsController extends Controller
             $this->backWithErrors($back, $v->errors);
         }
         $data = $v->clean + ['price_cents' => $price, 'is_active' => empty($_POST['is_active']) ? 0 : 1];
-        $data['addon_for'] = ($existing && $existing['plan_for']) ? null : Plans::addonValue((array) ($_POST['addon'] ?? []));
         if ($existing && $existing['plan_for']) {
             $data['setup_cents'] = Ops::cents((string) ($_POST['setup'] ?? ''));
             $data['includes'] = mb_substr(trim((string) ($_POST['includes'] ?? '')), 0, 3000) ?: null;
@@ -436,7 +434,7 @@ final class AdminOpsController extends Controller
         $company = TenantContext::current()['display_name'];
         Ops::notify((int) $u['id'], "Protect your home with $company",
             "Hi {$u['first_name']}, thank you for helping keep our community safe. Get 24/7 armed response with a monthly plan for your home, car (tracker) or business (alarm). Pick yours in a minute and we'll send your quotation.",
-            '/account/pricelist');
+            '/account/services');
         Audit::log('lead.offer_sent', 'user', $u['id']);
         flash('success', "Protection offer sent to {$u['first_name']} in the app.");
         redirect($back);

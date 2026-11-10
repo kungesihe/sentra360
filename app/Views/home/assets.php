@@ -16,8 +16,7 @@
   <div class="row g-3">
     <?php foreach ($assets as $a):
       $plan = $P::forAsset($kind, $a);
-      $isBiz = $P::typeFor($kind, $a) === 'business';
-      $extras = $extrasByType[$P::typeFor($kind, $a)] ?? []; ?>
+      $isBiz = $P::typeFor($kind, $a) === 'business'; ?>
       <div class="col-md-6 col-xl-4">
         <div class="panel h-100 d-flex flex-column">
           <div class="d-flex justify-content-between align-items-start mb-1">
@@ -33,13 +32,6 @@
             <form method="post" action="/account/assets/<?= $kind ?>/<?= (int) $a['id'] ?>/apply" class="plan-signup mb-2">
               <?= csrf_field() ?>
               <div class="small mb-2"><strong><?= e($plan['name']) ?></strong> · <?= App\Core\View::partial('shared/price', ['s' => $plan]) ?><?= $plan['setup_cents'] ? ' <span class="text-body-secondary">+ ' . money_exact((int) $plan['setup_cents']) . ' once-off</span>' : '' ?></div>
-              <?php if ($extras): ?>
-                <details class="small mb-2"><summary>Add extras (optional)</summary>
-                  <?php foreach ($extras as $i => $x): ?>
-                    <div class="form-check"><input class="form-check-input" type="checkbox" name="extras[]" value="<?= e($x['name']) ?>" id="x<?= $a['id'] . '-' . $i ?>"><label class="form-check-label" for="x<?= $a['id'] . '-' . $i ?>"><?= e($x['name']) ?></label></div>
-                  <?php endforeach; ?>
-                </details>
-              <?php endif; ?>
               <button class="btn btn-sm btn-warning"><i class="bi bi-shield-plus"></i> Get protected</button>
             </form>
           <?php endif; ?>

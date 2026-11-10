@@ -230,7 +230,7 @@ const shadow = () => ({ type: 'outer', color: '0B1F2A', blur: 8, offset: 2, angl
     [Bi.BiUserCheck, 'Play Console account', 'US$25 once. A company account needs a D-U-N-S number.'],
     [Bi.BiPackage, 'Build the app', 'At pwabuilder.com. Keep the signing key safe.'],
     [Bi.BiEnvelope, 'SMS and email provider', 'So codes and emergency-contact messages are really sent.'],
-    [Bi.BiCreditCard, 'Plan prices & bank details', 'Set your real monthly prices (Price list) and EFT details + WhatsApp number (Branding).'],
+    [Bi.BiCreditCard, 'Plan prices & bank details', 'Set your real prices (Sales → Services & prices) and EFT details + WhatsApp number (Branding).'],
   ];
   for (let i = 0; i < 6; i++) {
     const [Ic, h, t] = todo[i];
