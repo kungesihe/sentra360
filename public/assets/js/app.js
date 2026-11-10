@@ -240,7 +240,7 @@
           if (['acknowledged', 'dispatched'].includes(p.status)) card.classList.add('acked');
           const set = (k, v) => { $(`[data-f="${k}"]`, card).textContent = v; };
           set('reference', p.reference); set('status_label', p.status_label);
-          set('who', `${p.first_name} ${p.surname}`);
+          set('who', `${p.first_name} ${p.surname} · ${+p.is_client ? 'Client' : 'Community member (not a client)'}`);
           set('where', p.property_name ? `${p.property_name}, ${p.address}, ${p.suburb}` : (p.latitude ? `GPS ${(+p.latitude).toFixed(5)}, ${(+p.longitude).toFixed(5)}${p.accuracy_m ? ' (±' + p.accuracy_m + ' m)' : ''}` : `No GPS (${p.location_status})`));
           set('extra', p.extra_info ? `“${p.extra_info}”` : '');
           set('age', `Raised ${age(p.created_at)}`);

@@ -130,10 +130,12 @@ final class HomeIncidentsController extends Controller
         $active = DB::one('SELECT reference FROM panic_alerts WHERE tenant_id = ? AND customer_id = ? AND status NOT IN ("resolved","cancelled") ORDER BY id DESC LIMIT 1', [$tid, $u['id']]);
         $this->render('panic', [
             'title' => 'Panic button',
+            'gaps' => Incidents::profileGaps($u),
             'eligible' => Incidents::panicEligible($u),
+            'client' => Incidents::isClient($u),
             'active' => $active,
-            'properties' => DB::all('SELECT id, name, address FROM registered_properties WHERE tenant_id = ? AND owner_id = ? AND protection_status = "active"', [$tid, $u['id']]),
-            'vehicles' => DB::all('SELECT id, make, model, registration FROM registered_vehicles WHERE tenant_id = ? AND owner_id = ? AND protection_status = "active"', [$tid, $u['id']]),
+            'properties' => DB::all('SELECT id, name, address FROM registered_properties WHERE tenant_id = ? AND owner_id = ? ORDER BY protection_status = "active" DESC, id', [$tid, $u['id']]),
+            'vehicles' => DB::all('SELECT id, make, model, registration FROM registered_vehicles WHERE tenant_id = ? AND owner_id = ? ORDER BY id', [$tid, $u['id']]),
             'contacts' => (int) DB::value('SELECT COUNT(*) FROM emergency_contacts WHERE tenant_id = ? AND user_id = ? AND notify_on_panic = 1', [$tid, $u['id']]),
         ]);
     }
@@ -142,7 +144,7 @@ final class HomeIncidentsController extends Controller
     {
         $u = Auth::user();
         if (!Incidents::panicEligible($u)) {
-            throw new HttpException(403, 'The panic button is only available to clients with an active protection service.');
+            throw new HttpException(403, 'Complete your profile (home address and an emergency contact) to use the panic button.');
         }
         if (empty($_POST['confirm'])) {
             $this->backWithErrors('/account/panic', ['confirm' => 'Hold the button for 3 seconds, or tick the confirmation box, to send an alert.']);

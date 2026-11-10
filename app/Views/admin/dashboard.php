@@ -13,7 +13,7 @@
     ['/admin/quotations?status=sent', 'file-earmark-text', 'Quotes awaiting acceptance', $ops['quotes_waiting']],
     ['/admin/requests', 'bag-check', 'Service requests', $ops['requests']],
     ['/admin/payments', 'cash-coin', 'Payments (30 days)', money((int) $ops['paid_30'])],
-    ['/admin/homeowners', 'people', 'Homeowners', $stats['homeowners'] ?? 0],
+    ['/admin/leads', 'lightning-charge', 'Leads to follow up', count(App\Controllers\Tenant\AdminOpsController::leadsQuery())],
     ['/admin/homeowners', 'shield-check', 'Active clients', $stats['clients'] ?? 0],
     ['/admin/applications?status=active', 'house-lock', 'Protected properties / vehicles', $ops['active_props'] . ' / ' . $ops['active_vehicles']],
   ] as [$href, $ico, $label, $val]): ?>

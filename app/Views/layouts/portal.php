@@ -4,35 +4,8 @@ $t = tenant();
 $safeColor = fn($c, $d) => preg_match('/^#[0-9A-Fa-f]{6}$/', (string) $c) ? $c : $d;
 $p = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
 $portal = $portal ?? 'admin';
-$navs = [
-    'admin' => [
-        ['/admin', 'speedometer2', 'Dashboard'],
-        ['/admin/incidents', 'megaphone', 'Incidents'],
-        ['/admin/applications', 'house-check', 'Protection applications'],
-        ['/admin/quotations', 'file-earmark-text', 'Quotations'],
-        ['/admin/requests', 'calendar-check', 'Service requests'],
-        ['/admin/services', 'bag-check', 'Services'],
-        ['/admin/payments', 'cash-coin', 'Payments'],
-        ['/admin/homeowners', 'house-door', 'Homeowners'],
-        ['/admin/alerts', 'broadcast', 'Safety alerts'],
-        ['/admin/patrols', 'signpost-split', 'Patrol log'],
-        ['/admin/reports', 'bar-chart', 'Reports'],
-        ['/admin/staff', 'person-badge', 'Admin & security logins'],
-        ['/admin/branding', 'palette', 'Branding & profile'],
-        ['/admin/audit', 'journal-text', 'Audit log'],
-        ['/admin/notifications', 'bell', 'Notifications'],
-        ['/admin/profile', 'key', 'My login'],
-    ],
-    'security' => [
-        ['/security', 'display', 'Control room'],
-        ['/security/assignments', 'person-walking', 'My assignments'],
-        ['/security/incidents', 'megaphone', 'Incidents'],
-        ['/security/patrols', 'signpost-split', 'Patrol log'],
-        ['/security/homeowners', 'house-door', 'Homeowners'],
-        ['/security/notifications', 'bell', 'Notifications'],
-        ['/security/profile', 'key', 'My login'],
-    ],
-];
+$groups = nav_groups($portal);
+$activeGroup = nav_active($groups, $p);
 $unread = App\Services\Ops::unreadCount((int) $me['id']);
 $portalLabel = $portal === 'admin' ? 'Admin' : 'Security company';
 ?>
@@ -53,8 +26,8 @@ $portalLabel = $portal === 'admin' ? 'Admin' : 'Security company';
       <button type="button" class="btn-close btn-close-white ms-auto d-lg-none" data-bs-dismiss="offcanvas" data-bs-target="#side" aria-label="Close"></button>
     </div>
     <nav class="nav flex-column p-2">
-      <?php $home = $navs[$portal][0][0]; foreach ($navs[$portal] as [$href, $icon, $label]): ?>
-        <a class="nav-link<?= ($p === $href || ($href !== $home && str_starts_with($p, $href))) ? ' active' : '' ?>" href="<?= $href ?>"><i class="bi bi-<?= $icon ?>"></i> <?= e($label) ?><?php if (str_ends_with($href, '/notifications') && $unread): ?> <span class="badge rounded-pill text-bg-danger ms-auto"><?= $unread ?></span><?php endif; ?></a>
+      <?php foreach ($groups as $i => [$href, $icon, $label]): ?>
+        <a class="nav-link<?= $i === $activeGroup ? ' active' : '' ?>" href="<?= $href ?>"<?= $i === $activeGroup ? ' aria-current="page"' : '' ?>><i class="bi bi-<?= $icon ?>"></i> <?= e($label) ?></a>
       <?php endforeach; ?>
     </nav>
   </aside>
@@ -62,12 +35,13 @@ $portalLabel = $portal === 'admin' ? 'Admin' : 'Security company';
     <header class="portal-top">
       <button class="btn btn-sm btn-outline-secondary d-lg-none" data-bs-toggle="offcanvas" data-bs-target="#side" aria-controls="side" aria-label="Menu"><i class="bi bi-list"></i></button>
       <div class="ms-auto d-flex align-items-center gap-3">
-        <a href="/" class="small d-none d-sm-inline" target="_blank" rel="noopener">View public site <i class="bi bi-box-arrow-up-right"></i></a>
-        <span class="small text-body-secondary d-none d-md-inline"><?= e($me['first_name'] . ' ' . $me['surname']) ?></span>
+        <a href="/<?= e($portal) ?>/notifications" class="bell-link" aria-label="Notifications<?= $unread ? " ($unread unread)" : '' ?>"><i class="bi bi-bell"></i><?php if ($unread): ?><span class="bell-count"><?= $unread > 9 ? '9+' : $unread ?></span><?php endif; ?></a>
+        <a href="/<?= e($portal) ?>/profile" class="small text-body-secondary d-none d-md-inline text-decoration-none" title="My login"><i class="bi bi-person-circle"></i> <?= e($me['first_name'] . ' ' . $me['surname']) ?></a>
         <form method="post" action="/logout"><?= csrf_field() ?><button class="btn btn-sm btn-outline-secondary">Sign out</button></form>
       </div>
     </header>
     <div class="portal-content">
+      <?= App\Core\View::partial('partials/subtabs', ['groups' => $groups, 'activeGroup' => $activeGroup, 'path' => $p]) ?>
       <h1 class="h4 mb-4 no-print-title"><?= e($title ?? '') ?></h1>
       <?php require BASE_PATH . '/app/Views/partials/flash.php'; ?>
       <?= $content ?>

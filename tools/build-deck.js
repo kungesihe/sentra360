@@ -87,16 +87,16 @@ const shadow = () => ({ type: 'outer', color: '0B1F2A', blur: 8, offset: 2, angl
   s.addText('Security management, community safety and emergency response app: every screen, explained', { placeholder: 'body' });
   s.addImage({ data: await icon(Bi.BiShieldQuarter, 'FFFFFF'), x: 0.8, y: 1.0, w: 1.0, h: 1.0, altText: 'Shield icon' });
   s.addText(`Prepared ${new Date().toLocaleDateString('en-ZA', { day: 'numeric', month: 'long', year: 'numeric' })} · screenshots from the demo company "Ubuntu Shield Security" (sample data)`, { x: 0.8, y: 6.5, w: 11.7, h: 0.4, fontSize: 12, color: '94A3B8', margin: 0, isTextBox: true });
-  s.addNotes('SENTRA 360 is one app for one private security company, with three logins. The screenshots use sample data from a fictional demo company.');
+  s.addNotes('SENTRA 360 is one app for one private security company, with one sign-in page that opens the right area for homeowners, the office and security. The screenshots use sample data from a fictional demo company.');
 
   // --------------------------------------------------------- three logins
   s = pres.addSlide({ masterName: 'Content', sectionTitle: 'Introduction' });
-  s.addText('One app, three logins', { placeholder: 'title' });
-  caption(s, 'Each account only works on its own login page and only opens its own area');
+  s.addText('One sign-in, three areas', { placeholder: 'title' });
+  caption(s, 'Everyone signs in at /login: the app recognises the account and opens the right area');
   const logins = [
-    [Bi.BiHome, 'Homeowner', '/login · residents and clients', ['Reports incidents with photos and GPS', 'Applies to protect home and vehicles', 'Books services, accepts quotations, pays', 'Panic button once protected'], C.accent1],
-    [Bi.BiBuildings, 'Admin', '/admin/login · the company office', ['Reviews applications and sends quotations', 'Records payments and activates clients', 'Manages services, alerts and branding', 'Reports with Excel and PDF export'], C.accent6],
-    [Bi.BiShieldQuarter, 'Security company', '/security/login · control room and officers', ['Live control room with map and alarm', 'Acknowledges panic alerts, dispatches officers', 'Officers update en route / on scene', 'Patrol check-ins and homeowner lookup'], C.accent2],
+    [Bi.BiHome, 'Homeowner', '/account · residents and clients', ['Reports incidents with photos and GPS', 'Applies to protect home and vehicles', 'Books services, accepts quotations, pays', 'Big panic button with a complete profile'], C.accent1],
+    [Bi.BiBuildings, 'Admin', '/admin · the company office', ['Turns community reporters into clients (Leads)', 'Records payments and activates clients', 'Manages services, alerts and branding', 'Reports with Excel and PDF export'], C.accent6],
+    [Bi.BiShieldQuarter, 'Security company', '/security · control room and officers', ['Live control room with map and alarm', 'Acknowledges panic alerts, dispatches officers', 'Officers update en route / on scene', 'Patrol check-ins and homeowner lookup'], C.accent2],
   ];
   for (let i = 0; i < 3; i++) {
     const [Ic, h, sub, bullets, col] = logins[i];
@@ -245,7 +245,7 @@ const shadow = () => ({ type: 'outer', color: '0B1F2A', blur: 8, offset: 2, angl
   s.addText('Try it now', { placeholder: 'title' });
   s.addText([
     { text: 'Website: https://sentra360-t9tq.onrender.com', options: { breakLine: true } },
-    { text: 'Admin: /admin/login   ·   Security company: /security/login', options: { breakLine: true } },
+    { text: 'Everyone signs in at /login (admin, security and homeowners)', options: { breakLine: true } },
     { text: 'Homeowners sign up at /register' },
   ], { placeholder: 'body' });
   s.addNotes('The first visit after 15 quiet minutes takes about 50 seconds on the free hosting plan.');

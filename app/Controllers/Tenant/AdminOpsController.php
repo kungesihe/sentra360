@@ -297,6 +297,59 @@ final class AdminOpsController extends Controller
         redirect("/admin/requests/{$r['id']}");
     }
 
+    // ----------------------------------------------------------------- leads
+
+    /** Community members (not clients) who reported incidents or raised alerts: people to offer protection to. */
+    public static function leadsQuery(int $days = 90): array
+    {
+        $tid = TenantContext::id();
+        $since = date('Y-m-d H:i:s', strtotime("-$days days"));
+        return DB::all(
+            "SELECT * FROM (
+               SELECT u.id, u.mobile, u.email, u.created_at, p.first_name, p.surname,
+                      (SELECT COUNT(*) FROM incidents i WHERE i.reporter_id = u.id AND i.source = 'community' AND i.created_at >= ?) AS reports,
+                      (SELECT COUNT(*) FROM panic_alerts pa WHERE pa.customer_id = u.id AND pa.created_at >= ?) AS panics,
+                      (SELECT MAX(i.created_at) FROM incidents i WHERE i.reporter_id = u.id) AS last_activity,
+                      (SELECT MAX(a.created_at) FROM audit_logs a WHERE a.tenant_id = u.tenant_id AND a.action = 'lead.offer_sent' AND a.entity_type = 'user' AND a.entity_id = u.id) AS last_offer,
+                      (SELECT COUNT(*) FROM property_applications x WHERE x.applicant_id = u.id AND x.status NOT IN ('rejected','cancelled'))
+                        + (SELECT COUNT(*) FROM vehicle_applications y WHERE y.applicant_id = u.id AND y.status NOT IN ('rejected','cancelled')) AS open_apps
+                 FROM users u JOIN roles r ON r.id = u.role_id JOIN user_profiles p ON p.user_id = u.id
+                WHERE u.tenant_id = ? AND r.code = 'homeowner' AND u.status = 'active' AND u.client_status <> 'client'
+                  AND NOT EXISTS (SELECT 1 FROM registered_properties rp WHERE rp.owner_id = u.id AND rp.protection_status = 'active')
+                  AND NOT EXISTS (SELECT 1 FROM registered_vehicles rv WHERE rv.owner_id = u.id AND rv.protection_status = 'active')
+             ) l WHERE l.reports > 0 OR l.panics > 0
+             ORDER BY l.panics DESC, l.reports DESC, l.last_activity DESC LIMIT 300",
+            [$since, $since, $tid]
+        );
+    }
+
+    public function leads(): void
+    {
+        $this->render('leads', ['title' => 'Leads', 'rows' => self::leadsQuery()]);
+    }
+
+    /** Send a protection offer to a community member, in the app, at most once every 14 days. */
+    public function leadOffer(string $id): void
+    {
+        $tid = TenantContext::id();
+        $u = DB::one('SELECT u.*, p.first_name FROM users u JOIN roles r ON r.id = u.role_id JOIN user_profiles p ON p.user_id = u.id
+                       WHERE u.id = ? AND u.tenant_id = ? AND r.code = "homeowner"', [(int) $id, $tid]) ?? throw new HttpException(404);
+        $back = (string) ($_POST['return'] ?? '/admin/leads');
+        $back = preg_match('#^/admin/[a-z0-9/_-]*$#i', $back) ? $back : '/admin/leads';
+        $recent = DB::value('SELECT 1 FROM audit_logs WHERE tenant_id = ? AND action = "lead.offer_sent" AND entity_id = ? AND created_at >= NOW() - INTERVAL 14 DAY', [$tid, (string) $u['id']]);
+        if ($recent) {
+            flash('info', 'An offer was already sent in the last 14 days. Please give them time.');
+            redirect($back);
+        }
+        $company = TenantContext::current()['display_name'];
+        Ops::notify((int) $u['id'], "Protect your home with $company",
+            "Hi {$u['first_name']}, thank you for helping keep our community safe. Want guaranteed armed response and monitoring for your home? Apply in a minute and we'll send you a quotation.",
+            '/account/assets/property');
+        Audit::log('lead.offer_sent', 'user', $u['id']);
+        flash('success', "Protection offer sent to {$u['first_name']} in the app.");
+        redirect($back);
+    }
+
     // --------------------------------------------------------- safety alerts
 
     public function alerts(): void

@@ -1,14 +1,16 @@
 # SENTRA 360
 
-Security management, community safety and emergency response app for **one** private security company, with three logins:
+Security management, community safety and emergency response app for **one** private security company, with one sign-in page (`/login`) for three kinds of account:
 
 | Login | Who | Signs in at | Lands on |
 |---|---|---|---|
 | **Homeowner** | Residents and clients. They sign themselves up. | `/login` | `/account` |
-| **Admin** | The company's office. Full control. | `/admin/login` | `/admin` |
-| **Security company** | Control room and response officers. Logins are created by the Admin. | `/security/login` | `/security` |
+| **Admin** | The company's office. Full control. | `/login` | `/admin` |
+| **Security company** | Control room and response officers. Logins are created by the Admin. | `/login` | `/security` |
 
-Each login only works on its own page and only opens its own area.
+Everyone signs in at `/login`; the account's role decides where it lands, and each account only opens its own area. The old `/admin/login` and `/security/login` links redirect to `/login`.
+
+The panic button is open to every homeowner with a complete profile (name, mobile, email, a registered home address and at least one emergency contact), clients and community members alike. Alerts from community members show up in the control room labelled as such, and the Admin's **Leads** page lists them so the company can offer them a protection plan.
 
 To serve a second company later, copy the app, give the copy its own database and change the name and logo. See [docs/NEW_COMPANY.md](docs/NEW_COMPANY.md).
 

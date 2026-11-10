@@ -19,7 +19,7 @@ final class T
     public const HOST = 'localhost';
 
     /** login path per role */
-    public const LOGIN = ['homeowner' => '/login', 'admin' => '/admin/login', 'security_staff' => '/security/login'];
+    public const LOGIN = ['homeowner' => '/login', 'admin' => '/login', 'security_staff' => '/login'];
 
     public static function test(string $name, callable $fn): void
     {
@@ -68,6 +68,13 @@ final class T
             'first_name' => 'Test', 'surname' => ucfirst($role), 'email' => $email, 'mobile' => self::mobile(), 'password' => DemoSeeder::PASSWORD,
         ], $status);
         return UserService::find(self::$companyId, $id);
+    }
+
+    /** Give a homeowner a complete profile (home address + emergency contact) so the panic button unlocks. */
+    public static function completeProfile(array $user): void
+    {
+        DB::run('INSERT INTO registered_properties (tenant_id, owner_id, name, property_type, address, suburb, city) VALUES (?, ?, "Home", "House", "1 Test St", "Rivonia", "Johannesburg")', [self::$companyId, $user['id']]);
+        DB::run('INSERT INTO emergency_contacts (tenant_id, user_id, name, relationship, mobile) VALUES (?, ?, "Test Contact", "Sister", ?)', [self::$companyId, $user['id'], self::mobile()]);
     }
 
     public static function mobile(): string

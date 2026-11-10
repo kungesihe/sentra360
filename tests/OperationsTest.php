@@ -88,7 +88,7 @@ T::test('Residential protection: application → quotation → acceptance → pa
     $admin = T::user('admin');
     $h = T::login($home);
     $h->get('/account/panic');
-    T::contains('active protection service', $h->body, 'panic locked before protection');
+    T::contains('Complete your profile to unlock the panic button', $h->body, 'panic locked until the profile is complete');
     T::notContains('data-panic-hold', $h->body, 'no panic button shown');
     $h->get('/account/assets/property/new');
     $h->post('/account/assets/property', ['name' => 'Home', 'property_type' => 'House', 'address' => '5 Oak Ave', 'suburb' => 'Rivonia', 'city' => 'Johannesburg',
@@ -133,17 +133,22 @@ T::test('Residential protection: application → quotation → acceptance → pa
     T::eq('active', DB::value('SELECT protection_status FROM registered_properties WHERE id = ?', [$app['property_id']]), 'property protected');
     T::eq('client', DB::value('SELECT client_status FROM users WHERE id = ?', [$home['id']]), 'customer is now a client');
     $h->get('/account/panic');
+    T::contains('At least one emergency contact', $h->body, 'still needs an emergency contact');
+    $h->get('/account/contacts');
+    $h->post('/account/contacts', ['name' => 'Thandi', 'relationship' => 'Sister', 'mobile' => '0825551234', 'notify_on_panic' => 1]);
+    $h->get('/account/panic');
     T::contains('HOLD', $h->body, 'panic button unlocked');
 });
 
-T::test('Panic: entitlement, confirmation, control room delivery, acknowledgement, dispatch, client status view', function () {
+T::test('Panic: complete-profile rule, confirmation, control room delivery, acknowledgement, dispatch, client status view', function () {
     $plain = T::login(T::user('homeowner'));
     $plain->get('/account/panic');
     $plain->post('/account/panic', ['confirm' => 1]);
-    T::eq(403, $plain->status, 'non-client cannot raise a panic alert');
+    T::eq(403, $plain->status, 'incomplete profile cannot raise a panic alert');
 
     $client = T::user('homeowner');
     DB::run('UPDATE users SET client_status = "client" WHERE id = ?', [$client['id']]);
+    T::completeProfile($client);
     $c = T::login($client);
     $c->get('/account/panic');
     $c->post('/account/panic', ['latitude' => '-26.1', 'longitude' => '28.05', 'accuracy' => '12', 'location_status' => 'captured']);
@@ -240,7 +245,7 @@ T::test('Smoke test: every page of all three portals loads', function () {
             '/account/quotations', '/account/payments', '/account/contacts', '/account/notifications', '/account/profile', '/account/panic'],
         'admin' => ['/admin', '/admin/incidents', '/admin/incidents/new', '/admin/applications', '/admin/applications?status=all', '/admin/quotations',
             '/admin/requests', '/admin/requests?status=all', '/admin/services', '/admin/services/new', '/admin/payments', '/admin/homeowners',
-            '/admin/alerts', '/admin/patrols', '/admin/reports', '/admin/reports?days=365', '/admin/staff', '/admin/branding', '/admin/audit',
+            '/admin/alerts', '/admin/leads', '/admin/patrols', '/admin/reports', '/admin/reports?days=365', '/admin/staff', '/admin/branding', '/admin/audit',
             '/admin/notifications', '/admin/profile'],
         'security_staff' => ['/security', '/security/feed', '/security/assignments', '/security/incidents', '/security/incidents/new',
             '/security/patrols', '/security/homeowners', '/security/notifications', '/security/profile'],
@@ -304,4 +309,40 @@ T::test('Safety alerts appear publicly; patrol check-ins are logged by security 
     $home = T::login(T::user('homeowner'));
     $home->get('/security/patrols');
     T::eq(403, $home->status, 'homeowners cannot see patrols');
+});
+
+T::test('Community members with a complete profile can press panic; they show up as leads', function () {
+    $member = T::user('homeowner');
+    T::completeProfile($member);
+    $m = T::login($member);
+    $m->get('/account/panic');
+    T::contains('data-panic-hold', $m->body, 'panic button shown to a community member with a complete profile');
+    T::contains("You're a community member", $m->body, 'explains what a community member gets');
+    $m->post('/account/panic', ['confirm' => 1, 'location_status' => 'denied']);
+    $pa = DB::one('SELECT * FROM panic_alerts WHERE customer_id = ?', [$member['id']]);
+    T::true($pa !== null, 'community member alert created');
+
+    $s = T::login(T::user('security_staff'));
+    $s->get('/security/feed');
+    $feed = json_decode($s->body, true);
+    $row = array_values(array_filter($feed['panics'], fn($p) => $p['reference'] === $pa['reference']))[0] ?? null;
+    T::true($row !== null && (int) $row['is_client'] === 0, 'control room sees it is not a client');
+
+    $admin = T::login(T::user('admin'));
+    $admin->get('/admin/leads');
+    T::contains('/admin/leads/' . $member['id'] . '/offer', $admin->body, 'member is listed as a lead');
+    $admin->get("/admin/incidents/{$pa['incident_id']}");
+    T::contains('Send protection offer', $admin->body, 'incident page offers to send a protection offer');
+    $admin->post('/admin/leads/' . $member['id'] . '/offer', ['return' => "/admin/incidents/{$pa['incident_id']}"]);
+    T::redirectsTo("/admin/incidents/{$pa['incident_id']}", $admin, 'back to the incident');
+    T::eq(1, (int) DB::value('SELECT COUNT(*) FROM notifications WHERE user_id = ? AND subject LIKE "Protect your home%"', [$member['id']]), 'offer delivered in the app');
+    $admin->get('/admin/leads');
+    $admin->post('/admin/leads/' . $member['id'] . '/offer', ['return' => 'https://evil.example']);
+    T::redirectsTo('/admin/leads', $admin, 'unsafe return link ignored');
+    T::eq(1, (int) DB::value('SELECT COUNT(*) FROM notifications WHERE user_id = ? AND subject LIKE "Protect your home%"', [$member['id']]), 'no repeat offer within 14 days');
+
+    $sec = T::login(T::user('security_staff'));
+    $sec->get('/security');
+    $sec->post('/admin/leads/' . $member['id'] . '/offer', []);
+    T::eq(403, $sec->status, 'security staff cannot send offers');
 });

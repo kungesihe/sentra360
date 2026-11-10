@@ -39,7 +39,8 @@ $points = array_map(fn($p) => [(float) $p['latitude'], (float) $p['longitude']],
         <?php if ($inc['injuries']): ?><dt class="col-sm-4">Injuries</dt><dd class="col-sm-8"><?= e($inc['injuries']) ?></dd><?php endif; ?>
         <dt class="col-sm-4">Urgent help asked</dt><dd class="col-sm-8"><?= $inc['assistance_required'] ? '<strong class="text-danger">Yes</strong>' : 'No' ?></dd>
         <?php if ($inc['first_name']): ?>
-          <dt class="col-sm-4">Reporter</dt><dd class="col-sm-8"><?= e($inc['first_name'] . ' ' . $inc['surname']) ?> · <a href="tel:<?= e($inc['reporter_mobile']) ?>"><?= e($inc['reporter_mobile']) ?></a></dd>
+          <dt class="col-sm-4">Reporter</dt><dd class="col-sm-8"><?= e($inc['first_name'] . ' ' . $inc['surname']) ?> · <a href="tel:<?= e($inc['reporter_mobile']) ?>"><?= e($inc['reporter_mobile']) ?></a>
+            <?= $reporterIsClient ? '<span class="badge text-bg-success">Client</span>' : '<span class="badge text-bg-warning">Community member: not a client</span>' ?></dd>
         <?php endif; ?>
         <?php foreach ($contacts as $c): ?><dt class="col-sm-4">Emergency contact</dt><dd class="col-sm-8"><?= e($c['name']) ?> (<?= e($c['relationship'] ?: 'contact') ?>) · <a href="tel:<?= e($c['mobile']) ?>"><?= e($c['mobile']) ?></a></dd><?php endforeach; ?>
         <?php if ($inc['resolution']): ?><dt class="col-sm-4">Outcome</dt><dd class="col-sm-8"><?= e($inc['resolution']) ?></dd><?php endif; ?>
@@ -50,6 +51,15 @@ $points = array_map(fn($p) => [(float) $p['latitude'], (float) $p['longitude']],
   </div>
 
   <div class="col-xl-5">
+    <?php if ($portal === 'admin' && $inc['reporter_id'] && $reporterIsClient === false): ?>
+      <form method="post" action="/admin/leads/<?= (int) $inc['reporter_id'] ?>/offer" class="panel mb-3 border-warning">
+        <?= csrf_field() ?>
+        <h2 class="h6"><i class="bi bi-lightning-charge text-warning"></i> Lead: this person isn't a client yet</h2>
+        <p class="small text-body-secondary mb-2">After helping, invite them to protect their home. They get the message in the app with a link to apply.<?= $lastOffer ? ' Last offer: ' . e(date('j M Y', strtotime($lastOffer))) . '.' : '' ?></p>
+        <input type="hidden" name="return" value="/admin/incidents/<?= (int) $inc['id'] ?>">
+        <button class="btn btn-sm btn-warning">Send protection offer</button>
+      </form>
+    <?php endif; ?>
     <?php if ($myAssignment): ?>
       <div class="panel mb-3 border-primary">
         <h2 class="h6">My response · <?= $O::badge($myAssignment['status']) ?></h2>

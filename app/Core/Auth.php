@@ -8,8 +8,8 @@ namespace App\Core;
  *
  *   portal      role code        signs in at        lands on
  *   homeowner   homeowner        /login             /account
- *   admin       admin            /admin/login       /admin
- *   security    security_staff   /security/login    /security
+ *   admin       admin            /login             /admin
+ *   security    security_staff   /login             /security
  *
  * An account can only sign in through its own portal's login page and only
  * open its own portal's pages.
@@ -29,8 +29,8 @@ final class Auth
     /** portal => [role code, login path, home path, label] */
     public const PORTALS = [
         'homeowner' => ['homeowner', '/login', '/account', 'Homeowner'],
-        'admin'     => ['admin', '/admin/login', '/admin', 'Admin'],
-        'security'  => ['security_staff', '/security/login', '/security', 'Security company'],
+        'admin'     => ['admin', '/login', '/admin', 'Admin'],
+        'security'  => ['security_staff', '/login', '/security', 'Security company'],
     ];
 
     private static array|false|null $user = null;
@@ -45,20 +45,13 @@ final class Auth
         return null;
     }
 
-    public static function portalForPath(string $path): string
-    {
-        foreach (self::PORTALS as $portal => [, $login]) {
-            if ($path === $login) {
-                return $portal;
-            }
-        }
-        return 'homeowner';
-    }
-
     // ------------------------------------------------------------------ login
 
-    /** @return array{ok:bool, error?:string, user?:array} */
-    public static function attempt(string $portal, string $identifier, string $password): array
+    /**
+     * One sign-in for everyone: the account's role decides where it lands.
+     * @return array{ok:bool, error?:string, user?:array}
+     */
+    public static function attempt(string $identifier, string $password): array
     {
         $tenantId = TenantContext::id();
         $identifier = trim($identifier);
@@ -87,13 +80,8 @@ final class Auth
             }
             return ['ok' => false, 'error' => $generic];
         }
-        // Correct password, but this account belongs to a different login page.
-        $own = self::portalForRole($user['role_code']);
-        if ($own !== $portal) {
-            Audit::log('auth.wrong_portal', 'user', $user['id'], ['tried' => $portal], $tenantId, 'guest');
-            $label = $own ? self::PORTALS[$own][3] : 'another';
-            $login = $own ? self::PORTALS[$own][1] : '/login';
-            return ['ok' => false, 'error' => "This is a $label account. Please sign in on the $label login page.", 'redirect' => $login];
+        if (!self::portalForRole($user['role_code'])) {
+            return ['ok' => false, 'error' => $generic];
         }
         if (in_array($user['status'], ['suspended', 'disabled'], true)) {
             return ['ok' => false, 'error' => 'This account is not active. Please contact the company.'];

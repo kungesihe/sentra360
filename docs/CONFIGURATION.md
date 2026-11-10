@@ -16,7 +16,7 @@ All settings live in `.env`.
 | `REQUIRE_VERIFICATION` | `0` (default): homeowners are active immediately. `1`: they must confirm mobile (SMS code) and email first. Only switch on once SMS and email providers work. |
 | `PAYFAST_MERCHANT_ID`, `PAYFAST_MERCHANT_KEY`, `PAYFAST_PASSPHRASE`, `PAYFAST_SANDBOX` | Online card payments via PayFast. Leave empty to use EFT + manual recording. `PAYFAST_SANDBOX=1` (default) uses PayFast's test site. |
 
-## The three logins
+## One sign-in, three kinds of account
 
 | Login | Role code | Can |
 |---|---|---|
@@ -24,7 +24,7 @@ All settings live in `.env`.
 | Admin | `admin` | Everything: homeowners, admin and security logins, branding, audit log. |
 | Security company | `security_staff` | Look up homeowners (read-only). Later: incident feed, panic alerts, assignments, map. |
 
-Login pages and portals are defined in `App\Core\Auth::PORTALS`.
+Everyone signs in at `/login`; the role decides the landing area. Portals are defined in `App\Core\Auth::PORTALS`.
 
 ## Security settings in code
 

@@ -13,7 +13,7 @@ The app serves one company. For a second company, run a **separate copy** with i
    - `DB_NAME`: a new database name (and new `DB_PASS`)
 3. **Docker only:** in `docker-compose.yml` change `name:`, both `container_name:` values, and the ports (`8360`, `3360`) so both copies can run at the same time.
 4. **Install:** `php bin/install.php` (or `docker compose exec app php bin/install.php`).
-5. **Sign in at `/admin/login`** and, under *Branding & profile*, upload the logo and set the colours, welcome text, services, emergency number, privacy policy and terms.
+5. **Sign in at `/login`** with the Admin account and, under *Branding & profile*, upload the logo and set the colours, welcome text, services, emergency number, privacy policy and terms.
 6. **Create the security company logins** under *Admin & security logins*.
 
 Steps 1–4 take about 15 minutes. Everything the public sees (name, logo, colours, texts) is changed in step 5 without touching code.

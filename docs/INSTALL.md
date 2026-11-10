@@ -20,7 +20,7 @@
    ```
    - `--demo` loads sample logins instead of the `.env` admin (refused when `APP_ENV=production`).
    - `--fresh` wipes the database first (development only).
-5. Open http://localhost:8360 and sign in at `/admin/login`.
+5. Open http://localhost:8360 and sign in at `/login` with the Admin account.
 
 ## Option B: Standard PHP hosting (production)
 

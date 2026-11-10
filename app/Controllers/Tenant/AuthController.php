@@ -18,9 +18,10 @@ use App\Services\VerificationService;
  */
 final class AuthController extends Controller
 {
-    private function currentPortal(): string
+    /** Old per-portal sign-in addresses now lead to the single sign-in page. */
+    public function legacyLogin(): void
     {
-        return Auth::portalForPath(parse_url($_SERVER['REQUEST_URI'] ?? '/login', PHP_URL_PATH) ?: '/login');
+        redirect('/login', 301);
     }
 
     public function registerForm(): void
@@ -93,33 +94,28 @@ final class AuthController extends Controller
 
     public function loginForm(): void
     {
-        $portal = $this->currentPortal();
         if ($u = Auth::user()) {
             redirect(Auth::PORTALS[$u['portal']][2]);
         }
-        $this->view('tenant/login', [
-            'title' => Auth::PORTALS[$portal][3] . ' sign in',
-            'portal' => $portal,
-            'action' => Auth::PORTALS[$portal][1],
-        ], 'tenant');
+        $this->view('tenant/login', ['title' => 'Sign in'], 'tenant');
     }
 
+    /** One sign-in for homeowners, admins and security staff: the account decides where it lands. */
     public function login(): void
     {
         $tid = TenantContext::id();
-        $portal = $this->currentPortal();
-        $back = Auth::PORTALS[$portal][1];
         $bucket = 'login:' . client_ip();
         if (RateLimiter::tooMany($bucket, 20, 900)) {
-            $this->backWithErrors($back, ['identifier' => 'Too many sign-in attempts from your network. Please wait 15 minutes.']);
+            $this->backWithErrors('/login', ['identifier' => 'Too many sign-in attempts from your network. Please wait 15 minutes.']);
         }
         RateLimiter::hit($bucket);
-        $res = Auth::attempt($portal, (string) ($_POST['identifier'] ?? ''), (string) ($_POST['password'] ?? ''));
+        $res = Auth::attempt((string) ($_POST['identifier'] ?? ''), (string) ($_POST['password'] ?? ''));
         if (!$res['ok']) {
-            Audit::log('auth.login_failed', 'user', null, ['portal' => $portal, 'identifier' => mb_substr((string) ($_POST['identifier'] ?? ''), 0, 60)], $tid, 'guest');
-            $this->backWithErrors($back, ['identifier' => $res['error']]);
+            Audit::log('auth.login_failed', 'user', null, ['identifier' => mb_substr((string) ($_POST['identifier'] ?? ''), 0, 60)], $tid, 'guest');
+            $this->backWithErrors('/login', ['identifier' => $res['error']]);
         }
         $u = $res['user'];
+        $portal = Auth::portalForRole($u['role_code']);
         Auth::startSession((int) $u['id'], $tid);
         Audit::log('auth.login', 'user', $u['id'], ['portal' => $portal], $tid, 'user', (int) $u['id']);
         $home = Auth::PORTALS[$portal][2];
@@ -130,7 +126,6 @@ final class AuthController extends Controller
         }
         redirect($home);
     }
-
     public function logout(): void
     {
         $login = '/login';

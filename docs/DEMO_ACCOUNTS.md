@@ -6,9 +6,9 @@ All demo accounts use the password **`Demo!2026pass`**.
 
 | Login type | Sign in at | Email |
 |---|---|---|
-| Admin | http://localhost:8360/admin/login | `admin@demo.test` |
-| Security company (control room) | http://localhost:8360/security/login | `control@demo.test` |
-| Security company (officer) | http://localhost:8360/security/login | `officer@demo.test` |
+| Admin | http://localhost:8360/login | `admin@demo.test` |
+| Security company (control room) | http://localhost:8360/login | `control@demo.test` |
+| Security company (officer) | http://localhost:8360/login | `officer@demo.test` |
 | Homeowner (verified) | http://localhost:8360/login | `lerato@demo.test` |
 | Homeowner (verified) | http://localhost:8360/login | `sipho@demo.test` |
 | Homeowner (awaiting verification) | http://localhost:8360/login | `anika@demo.test` |

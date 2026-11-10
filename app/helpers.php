@@ -85,6 +85,56 @@ function money_exact(int $cents): string
     return 'R' . number_format($cents / 100, 2, '.', ' ');
 }
 
+/**
+ * Simplified navigation: a few main sections per area, each with tabs.
+ * Returns [ [href, icon, label, [[tabHref, tabLabel], ...]], ... ].
+ */
+function nav_groups(string $portal): array
+{
+    return match ($portal) {
+        'homeowner' => [
+            ['/account', 'house', 'Home', []],
+            ['/account/incidents', 'megaphone', 'Reports', [['/account/incidents', 'My reports'], ['/account/incidents/new', 'Report an incident']]],
+            ['/account/assets/property', 'shield-check', 'Protection', [['/account/assets/property', 'Properties'], ['/account/assets/vehicle', 'Vehicles'], ['/account/applications', 'Applications']]],
+            ['/account/services', 'bag-check', 'Services', [['/account/services', 'Browse'], ['/account/requests', 'My bookings'], ['/account/quotations', 'Quotations'], ['/account/payments', 'Payments']]],
+            ['/account/profile', 'person', 'Account', [['/account/profile', 'Profile'], ['/account/contacts', 'Emergency contacts'], ['/account/notifications', 'Notifications']]],
+        ],
+        'admin' => [
+            ['/admin', 'speedometer2', 'Dashboard', []],
+            ['/admin/incidents', 'megaphone', 'Incidents', [['/admin/incidents', 'Incidents'], ['/admin/patrols', 'Patrol log'], ['/admin/alerts', 'Safety alerts']]],
+            ['/admin/applications', 'people', 'Clients', [['/admin/applications', 'Applications'], ['/admin/leads', 'Leads'], ['/admin/homeowners', 'Homeowners']]],
+            ['/admin/quotations', 'cash-coin', 'Sales', [['/admin/quotations', 'Quotations'], ['/admin/requests', 'Bookings'], ['/admin/services', 'Services'], ['/admin/payments', 'Payments']]],
+            ['/admin/reports', 'bar-chart', 'Reports', []],
+            ['/admin/staff', 'gear', 'Settings', [['/admin/staff', 'Logins'], ['/admin/branding', 'Branding'], ['/admin/audit', 'Audit log'], ['/admin/profile', 'My login']]],
+        ],
+        'security' => [
+            ['/security', 'display', 'Control room', []],
+            ['/security/assignments', 'person-walking', 'Incidents', [['/security/assignments', 'My assignments'], ['/security/incidents', 'All incidents']]],
+            ['/security/patrols', 'signpost-split', 'Patrols', []],
+            ['/security/homeowners', 'house-door', 'Homeowners', []],
+        ],
+        default => [],
+    };
+}
+
+/** Index of the nav group the path belongs to (longest matching prefix wins). */
+function nav_active(array $groups, string $path): ?int
+{
+    $best = null;
+    $bestLen = -1;
+    foreach ($groups as $i => [$href, , , $tabs]) {
+        foreach (array_merge([$href], array_column($tabs, 0)) as $p) {
+            // Section homes (/account, /admin, /security) only match exactly; others also match their sub-pages.
+            $match = $path === $p || (!in_array($p, ['/account', '/admin', '/security'], true) && str_starts_with($path, $p . '/'));
+            if ($match && strlen($p) > $bestLen) {
+                $best = $i;
+                $bestLen = strlen($p);
+            }
+        }
+    }
+    return $best;
+}
+
 function now(): string
 {
     return date('Y-m-d H:i:s');

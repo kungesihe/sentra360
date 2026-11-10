@@ -148,8 +148,36 @@ final class Incidents
 
     // ------------------------------------------------------------------ panic
 
-    /** Panic button entitlement: a client with an active protected property or vehicle (or marked client by Admin). */
+    /**
+     * What is missing from a homeowner's profile before the panic button unlocks.
+     * A complete profile (name, mobile, email + home address + emergency contact)
+     * lets the control room find the person and reach someone close to them.
+     * @return array<int,array{0:string,1:string,2:string}> [key, what is missing, where to add it]
+     */
+    public static function profileGaps(array $user): array
+    {
+        $tid = TenantContext::id();
+        $gaps = [];
+        if (trim((string) $user['first_name']) === '' || trim((string) $user['surname']) === '') {
+            $gaps[] = ['name', 'Your full name', '/account/profile'];
+        }
+        if (!DB::value('SELECT 1 FROM registered_properties WHERE tenant_id = ? AND owner_id = ?', [$tid, $user['id']])) {
+            $gaps[] = ['address', 'Your home address (register your property)', '/account/assets/property/new'];
+        }
+        if (!DB::value('SELECT 1 FROM emergency_contacts WHERE tenant_id = ? AND user_id = ?', [$tid, $user['id']])) {
+            $gaps[] = ['contact', 'At least one emergency contact', '/account/contacts'];
+        }
+        return $gaps;
+    }
+
+    /** The panic button is for everyone with a complete profile: clients and community members. */
     public static function panicEligible(array $user): bool
+    {
+        return self::profileGaps($user) === [];
+    }
+
+    /** Does this person have an active protection service (paying client)? */
+    public static function isClient(array $user): bool
     {
         if ($user['client_status'] === 'client') {
             return true;

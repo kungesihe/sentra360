@@ -34,6 +34,9 @@ $secondary = $safeColor($t['secondary_color'], '#111827');
           <li class="nav-item"><a class="nav-link emergency-link" href="tel:<?= e(preg_replace('/[^\d+]/', '', $t['emergency_phone'])) ?>"><i class="bi bi-telephone-fill"></i> <?= e($t['emergency_phone']) ?></a></li>
         <?php endif; ?>
         <?php if ($u): ?>
+          <?php if ($u['portal'] === 'homeowner'): $unreadH = App\Services\Ops::unreadCount((int) $u['id']); ?>
+            <li class="nav-item"><a class="nav-link bell-link bell-dark" href="/account/notifications" aria-label="Notifications<?= $unreadH ? " ($unreadH unread)" : '' ?>"><i class="bi bi-bell"></i><?php if ($unreadH): ?><span class="bell-count"><?= $unreadH > 9 ? '9+' : $unreadH ?></span><?php endif; ?></a></li>
+          <?php endif; ?>
           <li class="nav-item"><a class="nav-link" href="<?= e(App\Core\Auth::PORTALS[$u['portal']][2]) ?>"><?= $u['portal'] === 'homeowner' ? 'My account' : e(App\Core\Auth::PORTALS[$u['portal']][3]) . ' portal' ?></a></li>
           <li class="nav-item">
             <form method="post" action="/logout" class="d-inline"><?= csrf_field() ?><button class="btn btn-link nav-link">Sign out</button></form>
@@ -62,7 +65,6 @@ $secondary = $safeColor($t['secondary_color'], '#111827');
       </div>
       <div class="col-md-auto small">
         <a href="/privacy" class="me-3">Privacy policy</a><a href="/terms" class="me-3">Terms</a><a href="/delete-account" class="me-3">Delete account</a>
-        <span class="text-body-secondary">Staff:</span> <a href="/admin/login" class="me-2">Admin login</a><a href="/security/login">Security login</a>
       </div>
     </div>
     <div class="small text-body-secondary mt-3">Powered by <?= e(config('name')) ?></div>

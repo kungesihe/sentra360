@@ -24,8 +24,8 @@ T::test('Branding changes appear on the public site and are escaped', function (
     T::contains('&lt;script&gt;alert(1)&lt;/script&gt; Guard', $pub->body, 'name is HTML-escaped');
     T::notContains('<script>alert(1)</script>', $pub->body, 'no raw script tag');
     T::contains('0800 111 222', $pub->body, 'emergency number shown');
-    $pub->get('/security/login');
-    T::contains('--brand:#AA1122', $pub->body, 'branding also applies to the login pages');
+    $pub->get('/login');
+    T::contains('--brand:#AA1122', $pub->body, 'branding also applies to the sign-in page');
     $restore();
 });
 

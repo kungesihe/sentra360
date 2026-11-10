@@ -9,12 +9,27 @@
   <?php endif; ?>
 
   <?php if (!$eligible): ?>
-    <div class="panel text-center">
-      <i class="bi bi-lock fs-2 text-secondary"></i>
-      <p class="mt-2">The panic button is available to clients with an <strong>active protection service</strong> from <?= e($t['display_name']) ?>.</p>
-      <a href="/account/assets/property/new" class="btn btn-brand">Apply for protection</a>
+    <div class="panel">
+      <div class="text-center mb-3"><i class="bi bi-shield-lock fs-1 text-secondary"></i></div>
+      <h2 class="h5 text-center">Complete your profile to unlock the panic button</h2>
+      <p class="text-body-secondary text-center small">So that the control room knows where to find you and who to call.</p>
+      <ul class="list-group list-group-flush">
+        <li class="list-group-item"><i class="bi bi-check-circle-fill text-success"></i> Name, mobile number and email</li>
+        <?php foreach ([['address', 'Your home address (register your property)', '/account/assets/property/new'], ['contact', 'At least one emergency contact', '/account/contacts']] as [$key, $what, $href]):
+            $missing = in_array($key, array_column($gaps, 0), true); ?>
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <span><i class="bi <?= $missing ? 'bi-circle text-secondary' : 'bi-check-circle-fill text-success' ?>"></i> <?= e($what) ?></span>
+            <?php if ($missing): ?><a href="<?= e($href) ?>" class="btn btn-sm btn-brand">Add</a><?php endif; ?>
+          </li>
+        <?php endforeach; ?>
+      </ul>
     </div>
   <?php else: ?>
+    <?php if (!$client): ?>
+      <div class="alert alert-light border small">
+        <strong>You're a community member.</strong> Your alert goes straight to the <?= e($t['display_name']) ?> control room, who will help where they can and call the police if needed. A guaranteed armed response is part of a <a href="/account/assets/property">protection plan</a>.
+      </div>
+    <?php endif; ?>
     <div class="alert alert-warning small">
       <strong>Before you rely on this:</strong> alerts need an internet connection and this page open. They can't be sent if your phone is offline or the browser is closed. In a life-threatening emergency also call
       <?php if ($tel): ?><a href="tel:<?= e($tel) ?>" class="fw-bold"><?= e($t['emergency_phone']) ?></a> or <?php endif; ?><a href="tel:10111" class="fw-bold">10111</a>.

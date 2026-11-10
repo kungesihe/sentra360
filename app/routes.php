@@ -1,9 +1,9 @@
 <?php
 /**
- * All routes. One company, three sign-ins:
- *   Homeowner          /login           → /account
- *   Admin              /admin/login     → /admin
- *   Security company   /security/login  → /security
+ * All routes. One company, one sign-in (/login), three areas by role:
+ *   Homeowner          → /account
+ *   Admin              → /admin
+ *   Security company   → /security
  */
 
 use App\Controllers\DevController;
@@ -36,13 +36,11 @@ $router->get('/services/{id}', [HomeCommerceController::class, 'serviceShow']);
 $router->get('/files/{id}', [FilesController::class, 'show']);
 $router->postExternal('/payments/payfast/notify', [HomeCommerceController::class, 'payfastNotify']);
 
-// Sign-in pages (one per login type)
+// One sign-in for everyone; the account's role decides where it lands
 $router->get('/login', [AuthController::class, 'loginForm']);
 $router->post('/login', [AuthController::class, 'login']);
-$router->get('/admin/login', [AuthController::class, 'loginForm']);
-$router->post('/admin/login', [AuthController::class, 'login']);
-$router->get('/security/login', [AuthController::class, 'loginForm']);
-$router->post('/security/login', [AuthController::class, 'login']);
+$router->get('/admin/login', [AuthController::class, 'legacyLogin']);
+$router->get('/security/login', [AuthController::class, 'legacyLogin']);
 $router->post('/logout', [AuthController::class, 'logout']);
 
 // Homeowner registration and password recovery
@@ -149,6 +147,8 @@ $router->post('/admin/services/{id}', [AdminOpsController::class, 'serviceSave']
 $router->get('/admin/requests', [AdminOpsController::class, 'requests'], $admin);
 $router->get('/admin/requests/{id}', [AdminOpsController::class, 'request'], $admin);
 $router->post('/admin/requests/{id}/status', [AdminOpsController::class, 'requestStatus'], $admin);
+$router->get('/admin/leads', [AdminOpsController::class, 'leads'], $admin);
+$router->post('/admin/leads/{id}/offer', [AdminOpsController::class, 'leadOffer'], $admin);
 $router->get('/admin/alerts', [AdminOpsController::class, 'alerts'], $admin);
 $router->post('/admin/alerts', [AdminOpsController::class, 'alertStore'], $admin);
 $router->post('/admin/alerts/{id}/end', [AdminOpsController::class, 'alertEnd'], $admin);

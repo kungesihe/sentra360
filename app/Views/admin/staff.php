@@ -34,8 +34,8 @@
       <div class="mb-3">
         <span class="form-label d-block">Login type</span>
         <?php $sel = $_SESSION['_old']['role'] ?? 'security_staff'; ?>
-        <div class="form-check"><input class="form-check-input" type="radio" name="role" id="r-sec" value="security_staff"<?= $sel === 'security_staff' ? ' checked' : '' ?>><label class="form-check-label" for="r-sec"><strong>Security company</strong>: control room or response officer. Signs in at /security/login.</label></div>
-        <div class="form-check"><input class="form-check-input" type="radio" name="role" id="r-adm" value="admin"<?= $sel === 'admin' ? ' checked' : '' ?>><label class="form-check-label" for="r-adm"><strong>Admin</strong>: office staff with full control. Signs in at /admin/login.</label></div>
+        <div class="form-check"><input class="form-check-input" type="radio" name="role" id="r-sec" value="security_staff"<?= $sel === 'security_staff' ? ' checked' : '' ?>><label class="form-check-label" for="r-sec"><strong>Security company</strong>: control room or response officer. Lands in the control room after signing in.</label></div>
+        <div class="form-check"><input class="form-check-input" type="radio" name="role" id="r-adm" value="admin"<?= $sel === 'admin' ? ' checked' : '' ?>><label class="form-check-label" for="r-adm"><strong>Admin</strong>: office staff with full control. Lands in the admin portal after signing in.</label></div>
       </div>
       <div class="row g-3">
         <div class="col-6"><label class="form-label" for="first_name">First name</label><input class="form-control" id="first_name" name="first_name" required value="<?= old('first_name') ?>"></div>

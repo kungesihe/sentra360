@@ -17,22 +17,21 @@ const users = {
   public: null,
   lerato: { login: '/login', email: 'lerato@demo.test' },
   sipho: { login: '/login', email: 'sipho@demo.test' },
-  admin: { login: '/admin/login', email: 'admin@demo.test' },
-  security: { login: '/security/login', email: 'officer@demo.test' },
+  admin: { login: '/login', email: 'admin@demo.test' },
+  security: { login: '/login', email: 'officer@demo.test' },
 };
 
 // [section, user, path, title, explanation, phone?]
 const P = [
-  ['Public site', 'public', '/', 'Company home page', 'The branded public website: welcome message, 24/7 emergency number, live community safety alerts, quick actions and services.', true],
+  ['Public site', 'public', '/', 'Community home page', 'A simple, community-first welcome: "Safer streets start with neighbours", live safety alerts, the 24/7 emergency number and three steps to join.', true],
   ['Public site', 'public', '/services', 'Services marketplace (public)', 'Anyone can browse the security services on offer, with prices or "quotation required". Booking needs a free account.', true],
-  ['Public site', 'public', '/login', 'Homeowner sign-in', 'One sign-in page with three tabs: Homeowner, Admin and Security company. Each account only works on its own tab.', true],
-  ['Public site', 'public', '/admin/login', 'Admin sign-in', 'The company office signs in here. Accounts lock for 15 minutes after 5 wrong passwords.', false],
-  ['Public site', 'public', '/security/login', 'Security company sign-in', 'Control room operators and response officers sign in here. Their logins are created by the Admin.', false],
+  ['Public site', 'public', '/login', 'One sign-in for everyone', 'Residents, the company office and security officers all sign in here. The app recognises the account and opens the right area automatically.', true],
   ['Public site', 'public', '/register', 'Create a homeowner account', 'Residents join for free with name, mobile, email and password, and give POPIA consent. Accounts are active immediately (verification is switched off for now).', true],
   ['Public site', 'public', '/privacy', 'Privacy policy', 'POPIA-aligned privacy notice in the company\'s name. The Admin can replace it with their own policy.', false],
 
   ['Homeowner', 'lerato', '/account', 'Homeowner dashboard', 'Everything at a glance: panic button (for clients), safety alerts, counts of reports, applications, quotations and bookings, and quick actions.', true],
-  ['Homeowner', 'lerato', '/account/panic', 'Panic button', 'Clients hold the red button for 3 seconds (or tick a box and press Send). It captures GPS where allowed, can be silent, and warns honestly that it needs internet.', true],
+  ['Homeowner', 'lerato', '/account/panic', 'Panic button', 'Anyone with a complete profile (home address + emergency contact) can hold the big red button for 3 seconds (or tick a box and press Send). It captures GPS where allowed, can be silent, and warns honestly that it needs internet.', true],
+  ['Homeowner', 'sipho', '/account/panic', 'Panic button: finish your profile first', 'Until a resident has a home address and an emergency contact on file, the panic page shows a short checklist instead of the button, so responders always know where to go and who to call.', true],
   ['Homeowner', 'lerato', `/account/panic/${ids.panic_ref}`, 'Panic alert status', 'After sending, the client sees each step with times: received by server, shown in the control room, acknowledged, officer dispatched, resolved. Location keeps updating.', true],
   ['Homeowner', 'lerato', '/account/incidents/new', 'Report an incident', '22 crime and emergency categories, date and time, place with optional GPS, description, witnesses, injuries, and up to 5 photos, documents or videos.', true],
   ['Homeowner', 'lerato', '/account/incidents', 'My incident reports', 'Every report with its reference number and current status.', false],
@@ -66,6 +65,7 @@ const P = [
   ['Admin', 'admin', '/admin/services', 'Services', 'The company manages its services marketplace: prices, availability, area and photos.', false],
   ['Admin', 'admin', '/admin/payments', 'Payments', 'All payments with Excel export. PayFast online payment switches on once merchant keys are added.', false],
   ['Admin', 'admin', '/admin/homeowners', 'Homeowners', 'All homeowners with status and client type. Verify, suspend or mark as client from each record.', false],
+  ['Admin', 'admin', '/admin/leads', 'Leads', 'Community members who reported incidents or pressed panic but are not clients yet. One click sends a protection offer into their app (at most once every 14 days).', false],
   ['Admin', 'admin', '/admin/alerts', 'Community safety alerts', 'Publish alerts that appear on the public site and every homeowner dashboard until they expire.', false],
   ['Admin', 'admin', '/admin/reports', 'Reports', 'Incidents by category, response times, application conversion, quotes accepted, revenue and services, with Excel export and Save as PDF.', false],
   ['Admin', 'admin', '/admin/staff', 'Admin & security logins', 'Create and disable Admin and Security company logins.', false],
@@ -96,8 +96,13 @@ const P = [
   for (const [section, user, url, title, explain, phone] of P) {
     n++;
     const slug = String(n).padStart(2, '0') + '-' + title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-    const ctx = await ctxFor(user);
-    const pg = await ctx.newPage();
+    let pg;
+    for (let attempt = 0; ; attempt++) {
+      try { pg = await (await ctxFor(user)).newPage(); break; } catch (e) {
+        if (attempt >= 2) throw e;
+        delete contexts[user]; // Edge occasionally drops a context; sign in again
+      }
+    }
     // Desktop
     await pg.setViewport({ width: 1366, height: 768, deviceScaleFactor: 1 });
     await pg.goto(BASE + url, { waitUntil: 'networkidle2' });

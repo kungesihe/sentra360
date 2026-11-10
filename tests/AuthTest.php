@@ -140,7 +140,7 @@ T::test('Forwarded IP headers are ignored unless TRUST_PROXY is on', function ()
     T::contains('Too many sign-in attempts', $c->body, 'spoofed IPs share one limit');
 });
 
-T::test('A security officer resetting their password is sent back to the security login', function () {
+T::test('A security officer resetting their password is sent back to sign-in', function () {
     $s = T::user('security_staff');
     $c = new Http(T::HOST);
     $c->get('/forgot-password');
@@ -149,5 +149,5 @@ T::test('A security officer resetting their password is sent back to the securit
     parse_str((string) parse_url($m[1], PHP_URL_QUERY), $q);
     $c->get($m[1]);
     $c->post('/reset-password', ['u' => $q['u'], 't' => $q['t'], 'password' => 'Officer12345', 'password_confirm' => 'Officer12345']);
-    T::redirectsTo('/security/login', $c, 'redirect to the right login page');
+    T::redirectsTo('/login', $c, 'redirect to the sign-in page');
 });

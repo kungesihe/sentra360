@@ -6,44 +6,34 @@ use App\Services\DemoSeeder;
 use Tests\Http;
 use Tests\T;
 
-T::test('Each portal sends signed-out visitors to its own login page', function () {
+T::test('Every area sends signed-out visitors to the one sign-in page', function () {
     $c = new Http(T::HOST);
-    foreach (['/account' => '/login', '/admin' => '/admin/login', '/admin/homeowners' => '/admin/login', '/security' => '/security/login', '/security/homeowners' => '/security/login'] as $page => $login) {
+    foreach (['/account', '/admin', '/admin/homeowners', '/admin/leads', '/security', '/security/homeowners'] as $page) {
         $c->get($page);
-        T::redirectsTo($login, $c, "$page requires sign-in");
+        T::redirectsTo('/login', $c, "$page requires sign-in");
     }
 });
 
-T::test('Each account type lands on its own portal', function () {
+T::test('One sign-in page: each account type lands in its own area', function () {
     foreach (['homeowner' => '/account', 'admin' => '/admin', 'security_staff' => '/security'] as $role => $home) {
         $u = T::user($role);
         $c = new Http(T::HOST);
-        $c->get(T::LOGIN[$role]);
-        $c->post(T::LOGIN[$role], ['identifier' => $u['email'], 'password' => DemoSeeder::PASSWORD]);
+        $c->get('/login');
+        $c->post('/login', ['identifier' => $u['email'], 'password' => DemoSeeder::PASSWORD]);
         T::redirectsTo($home, $c, "$role lands on $home");
         $c->get($home);
         T::eq(200, $c->status, "$role can open $home");
     }
 });
 
-T::test('Accounts cannot sign in through another login page', function () {
-    $cases = [
-        ['homeowner', '/admin/login'], ['homeowner', '/security/login'],
-        ['security_staff', '/admin/login'], ['security_staff', '/login'],
-        ['admin', '/security/login'], ['admin', '/login'],
-    ];
-    foreach ($cases as [$role, $wrongLogin]) {
-        $u = T::user($role);
-        $c = new Http(T::HOST);
-        $c->get($wrongLogin);
-        $c->post($wrongLogin, ['identifier' => $u['email'], 'password' => DemoSeeder::PASSWORD]);
-        T::redirectsTo($wrongLogin, $c, "$role refused at $wrongLogin");
-        $c->get($wrongLogin);
-        T::contains('Please sign in on the', $c->body, 'explains which login to use');
-        T::eq(null, $c->cookie('SENTRASESS') ? DB::value('SELECT id FROM user_sessions WHERE user_id = ? LIMIT 1', [$u['id']]) : null, "no session created for $role at $wrongLogin");
+T::test('Old admin and security login links point to the one sign-in page', function () {
+    $c = new Http(T::HOST);
+    foreach (['/admin/login', '/security/login'] as $old) {
+        $c->get($old);
+        T::eq(301, $c->status, "$old moved permanently");
+        T::redirectsTo('/login', $c, "$old → /login");
     }
 });
-
 T::test('Homeowners cannot open the admin or security portals', function () {
     $c = T::login(T::user('homeowner'));
     foreach (['/admin', '/admin/homeowners', '/admin/staff', '/security', '/security/homeowners'] as $p) {
@@ -105,11 +95,11 @@ T::test('Disabling a security login signs it out and blocks sign-in; admins cann
     $c->get('/admin/staff');
     $c->post('/admin/staff/' . $sec['id'] . '/status', ['action' => 'disable']);
     $secClient->get('/security');
-    T::redirectsTo('/security/login', $secClient, 'disabled officer signed out');
+    T::redirectsTo('/login', $secClient, 'disabled officer signed out');
     $again = new Http(T::HOST);
-    $again->get('/security/login');
-    $again->post('/security/login', ['identifier' => $sec['email'], 'password' => DemoSeeder::PASSWORD]);
-    $again->get('/security/login');
+    $again->get('/login');
+    $again->post('/login', ['identifier' => $sec['email'], 'password' => DemoSeeder::PASSWORD]);
+    $again->get('/login');
     T::contains('not active', $again->body, 'disabled login refused');
 
     $c->get('/admin/staff');

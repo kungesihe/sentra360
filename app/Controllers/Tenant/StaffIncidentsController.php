@@ -119,7 +119,10 @@ final class StaffIncidentsController extends Controller
         }
         $vehicle = $inc['vehicle_id'] ? DB::one('SELECT make, model, colour, registration FROM registered_vehicles WHERE id = ? AND tenant_id = ?', [$inc['vehicle_id'], TenantContext::id()]) : null;
         $me = Auth::user();
+        $reporter = $inc['reporter_id'] ? DB::one('SELECT u.*, p.first_name, p.surname FROM users u JOIN user_profiles p ON p.user_id = u.id WHERE u.id = ? AND u.tenant_id = ?', [$inc['reporter_id'], TenantContext::id()]) : null;
         $this->render('staff/incident', [
+            'reporterIsClient' => $reporter ? Incidents::isClient($reporter) : null,
+            'lastOffer' => $reporter ? DB::value('SELECT MAX(created_at) FROM audit_logs WHERE tenant_id = ? AND action = "lead.offer_sent" AND entity_id = ?', [TenantContext::id(), (string) $reporter['id']]) : null,
             'title' => $inc['reference'], 'inc' => $inc, 'panic' => $panic, 'asset' => $asset, 'vehicle' => $vehicle,
             'timeline' => Ops::timeline('incident', (int) $inc['id'], true),
             'files' => Ops::filesFor('incident', (int) $inc['id']),
@@ -233,7 +236,10 @@ final class StaffIncidentsController extends Controller
         $tid = TenantContext::id();
         $panics = DB::all(
             'SELECT pa.id, pa.reference, pa.status, pa.created_at, pa.latitude, pa.longitude, pa.accuracy_m, pa.location_status, pa.silent, pa.extra_info,
-                    pa.incident_id, p.first_name, p.surname, u.mobile, rp.name AS property_name, rp.address, rp.suburb
+                    pa.incident_id, p.first_name, p.surname, u.mobile, rp.name AS property_name, rp.address, rp.suburb,
+                    (u.client_status = "client"
+                      OR EXISTS (SELECT 1 FROM registered_properties x WHERE x.owner_id = u.id AND x.protection_status = "active")
+                      OR EXISTS (SELECT 1 FROM registered_vehicles y WHERE y.owner_id = u.id AND y.protection_status = "active")) AS is_client
                FROM panic_alerts pa JOIN users u ON u.id = pa.customer_id JOIN user_profiles p ON p.user_id = u.id
                LEFT JOIN registered_properties rp ON rp.id = pa.property_id
               WHERE pa.tenant_id = ? AND pa.status NOT IN ("resolved","cancelled") ORDER BY pa.id DESC',

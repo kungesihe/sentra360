@@ -18,7 +18,7 @@ REPORT INCIDENTS
 • Add photos, short videos, documents and your GPS location
 • Get a reference number and follow every step: received, officer assigned, on scene, resolved
 
-PANIC BUTTON (for clients with an active protection service)
+PANIC BUTTON (for every resident with a complete profile: home address and an emergency contact)
 • Hold the button for 3 seconds to alert the control room (protection against accidental presses)
 • Sends your GPS location (when you allow it) and keeps updating it while the alert is open
 • Choose a silent alert, add a note, and optionally notify your emergency contacts
@@ -93,4 +93,4 @@ Check these against how the company actually operates before submitting.
 - Expected result: rated for everyone / 3+. Target audience: **18+** (set in "Target audience").
 
 ## App access (for Google's reviewers)
-Google needs a working login to review the app. Create a homeowner test account (and mark it as a client so the panic button shows), then enter it under App content → App access. Add a note: "Panic alerts from this account go to the company's test control room."
+Google needs a working login to review the app. Create a homeowner test account (add a home address and an emergency contact so the panic button shows), then enter it under App content → App access. Add a note: "Panic alerts from this account go to the company's test control room."

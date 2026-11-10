@@ -29,6 +29,7 @@ final class AccountController extends Controller
         $this->view('tenant/account/dashboard', [
             'title' => 'My account', 'user' => $u, 'counts' => $counts,
             'panicEligible' => \App\Services\Incidents::panicEligible($u),
+            'gaps' => \App\Services\Incidents::profileGaps($u),
             'activePanic' => DB::one('SELECT reference, status FROM panic_alerts WHERE tenant_id = ? AND customer_id = ? AND status NOT IN ("resolved","cancelled") ORDER BY id DESC LIMIT 1', [$tid, $uid]),
             'alerts' => DB::all('SELECT * FROM safety_alerts WHERE tenant_id = ? AND (expires_at IS NULL OR expires_at > NOW()) ORDER BY id DESC LIMIT 3', [$tid]),
             'recentIncidents' => DB::all('SELECT id, reference, title, status, created_at FROM incidents WHERE tenant_id = ? AND reporter_id = ? ORDER BY id DESC LIMIT 4', [$tid, $uid]),

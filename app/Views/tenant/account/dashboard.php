@@ -40,11 +40,12 @@
           <span class="small">Opens the emergency screen</span>
         </a>
       <?php else: ?>
-        <div class="panel h-100 d-flex flex-column justify-content-center text-center">
-          <i class="bi bi-broadcast-pin fs-2 text-secondary"></i>
-          <div class="fw-semibold mt-2">Panic button</div>
-          <p class="small text-body-secondary mb-2">Available once you have an active protection service.</p>
-          <a href="/account/assets/property/new" class="btn btn-sm btn-brand">Apply for protection</a>
+        <div class="panel h-100">
+          <div class="d-flex align-items-center gap-2 mb-2"><i class="bi bi-broadcast-pin fs-4 text-danger"></i><span class="fw-semibold">Unlock your panic button</span></div>
+          <p class="small text-body-secondary">For your safety, the control room needs to know where you live and who to call. Finish these steps:</p>
+          <ul class="list-unstyled small mb-0">
+            <?php foreach ($gaps as [, $what, $href]): ?><li class="mb-2"><a href="<?= e($href) ?>"><i class="bi bi-circle"></i> <?= e($what) ?></a></li><?php endforeach; ?>
+          </ul>
         </div>
       <?php endif; ?>
     </div>
