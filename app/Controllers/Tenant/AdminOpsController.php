@@ -328,7 +328,10 @@ final class AdminOpsController extends Controller
     public function reports(): void
     {
         $tid = TenantContext::id();
-        $days = in_array((int) ($_GET['days'] ?? 30), [7, 30, 90, 365], true) ? (int) $_GET['days'] : 30;
+        $days = (int) ($_GET['days'] ?? 30);
+        if (!in_array($days, [7, 30, 90, 365], true)) {
+            $days = 30;
+        }
         $since = date('Y-m-d H:i:s', strtotime("-$days days"));
         $byCategory = DB::all('SELECT COALESCE(c.name, i.title) AS name, COUNT(*) n FROM incidents i LEFT JOIN incident_categories c ON c.id = i.category_id
                                 WHERE i.tenant_id = ? AND i.created_at >= ? GROUP BY name ORDER BY n DESC LIMIT 12', [$tid, $since]);

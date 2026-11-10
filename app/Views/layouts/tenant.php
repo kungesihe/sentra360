@@ -61,7 +61,7 @@ $secondary = $safeColor($t['secondary_color'], '#111827');
         <?php if ($t['psira_number'] && !str_starts_with((string) $t['psira_number'], 'DEMO')): ?><div class="small text-body-secondary">PSIRA reg. <?= e($t['psira_number']) ?></div><?php endif; ?>
       </div>
       <div class="col-md-auto small">
-        <a href="/privacy" class="me-3">Privacy policy</a><a href="/terms" class="me-3">Terms</a>
+        <a href="/privacy" class="me-3">Privacy policy</a><a href="/terms" class="me-3">Terms</a><a href="/delete-account" class="me-3">Delete account</a>
         <span class="text-body-secondary">Staff:</span> <a href="/admin/login" class="me-2">Admin login</a><a href="/security/login">Security login</a>
       </div>
     </div>

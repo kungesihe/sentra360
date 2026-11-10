@@ -5,6 +5,11 @@
   const $$ = (s, el = document) => Array.from(el.querySelectorAll(s));
   const csrf = () => ($('meta[name="csrf-token"]') || {}).content || '';
 
+  // Installable app (PWA / Play Store). The worker never caches account pages.
+  if ('serviceWorker' in navigator && location.protocol === 'https:' || location.hostname === 'localhost') {
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
+  }
+
   // ---------------------------------------------------------------- generic
   $$('form[data-confirm]').forEach((f) => f.addEventListener('submit', (e) => { if (!window.confirm(f.dataset.confirm)) e.preventDefault(); }));
   $$('[data-confirm-click]').forEach((b) => b.addEventListener('click', (e) => { if (!window.confirm(b.dataset.confirmClick)) e.preventDefault(); }));
@@ -187,9 +192,23 @@
     try { soundToggle.checked = localStorage.getItem('sentra-sound') === '1'; } catch (e) { /* storage blocked */ }
     soundToggle.addEventListener('change', () => { try { localStorage.setItem('sentra-sound', soundToggle.checked ? '1' : '0'); } catch (e) { /* ignore */ } if (soundToggle.checked) beep(1, 660); });
     let map = null, layer = null, fitted = false, L = null;
-    whenLeaflet((lib) => { L = lib; map = L.map(feedMap).setView([-26.1, 28.05], 11); tiles(map); layer = L.layerGroup().addTo(map); });
+    whenLeaflet((lib) => {
+      L = lib; map = L.map(feedMap).setView([-26.1, 28.05], 11); tiles(map); layer = L.layerGroup().addTo(map);
+      if (lastData) drawMap(lastData, 'redraw', true);
+    });
     const seen = new Set();
-    let first = true, lastSig = '';
+    let first = true, lastSig = '', mapSig = '', lastData = null;
+    // The map draws on its own schedule: the map library may finish loading after the first data arrives.
+    function drawMap(j, sig, refit) {
+      lastData = j;
+      if (!layer || (sig === mapSig && !refit)) return;
+      mapSig = sig;
+      layer.clearLayers();
+      const pts = [];
+      j.panics.filter((p) => p.latitude).forEach((p) => { const ll = [+p.latitude, +p.longitude]; pts.push(ll); L.marker(ll, { icon: dot('#DC2626') }).bindPopup(`${p.reference} · ${p.first_name} ${p.surname}`.replace(/[<>&]/g, '')).addTo(layer); });
+      j.incidents.filter((i) => i.latitude).forEach((i) => { const ll = [+i.latitude, +i.longitude]; pts.push(ll); L.marker(ll, { icon: dot(i.priority === 'high' || i.priority === 'critical' ? '#EA580C' : '#2563EB') }).bindPopup(`${i.reference} · ${i.title}`.replace(/[<>&]/g, '')).addTo(layer); });
+      if (pts.length && (!fitted || refit)) { map.fitBounds(pts, { padding: [40, 40], maxZoom: 15 }); fitted = true; }
+    }
     const age = (ts) => { const s = Math.max(0, (Date.now() - new Date(ts.replace(' ', 'T')).getTime()) / 1000); return s < 90 ? `${Math.round(s)} s ago` : `${Math.round(s / 60)} min ago`; };
 
     async function load() {
@@ -208,6 +227,7 @@
         j.panics.forEach((p) => { if (!seen.has(p.id)) { seen.add(p.id); if (!first) newOnes++; } });
         // Only rebuild the lists when something changed, so buttons aren't replaced mid-click.
         const sig = JSON.stringify([j.panics.map((p) => [p.id, p.status, p.latitude, p.longitude]), j.incidents.map((i) => [i.id, i.status, i.officers])]);
+        drawMap(j, sig, newOnes > 0);
         if (sig === lastSig) {
           $$('[data-age-ts]').forEach((el) => { el.textContent = `Raised ${age(el.dataset.ageTs)}`; });
           first = false;
@@ -250,13 +270,6 @@
         });
         if (!j.incidents.length) { const d = document.createElement('div'); d.className = 'list-group-item small text-body-secondary'; d.textContent = 'No open incidents.'; incList.appendChild(d); }
 
-        if (layer) {
-          layer.clearLayers();
-          const pts = [];
-          j.panics.filter((p) => p.latitude).forEach((p) => { const ll = [+p.latitude, +p.longitude]; pts.push(ll); L.marker(ll, { icon: dot('#DC2626') }).bindPopup(`${p.reference} · ${p.first_name} ${p.surname}`.replace(/[<>&]/g, '')).addTo(layer); });
-          j.incidents.filter((i) => i.latitude).forEach((i) => { const ll = [+i.latitude, +i.longitude]; pts.push(ll); L.marker(ll, { icon: dot(i.priority === 'high' || i.priority === 'critical' ? '#EA580C' : '#2563EB') }).bindPopup(`${i.reference} · ${i.title}`.replace(/[<>&]/g, '')).addTo(layer); });
-          if (pts.length && (!fitted || newOnes)) { map.fitBounds(pts, { padding: [40, 40], maxZoom: 15 }); fitted = true; }
-        }
         first = false;
       } catch (e) {
         $('[data-feed-offline]').classList.remove('d-none');

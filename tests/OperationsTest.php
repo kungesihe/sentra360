@@ -251,6 +251,7 @@ T::test('Smoke test: every page of all three portals loads', function () {
             $c->get($p);
             T::eq(200, $c->status, "$role: $p loads");
             T::notContains('Something went wrong', $c->body, "$role: $p has no error");
+            T::true(!preg_match('/<b>(Warning|Notice|Deprecated|Fatal error)<\/b>|^(Warning|Notice|Deprecated): /m', $c->body), "$role: $p shows no PHP warning");
         }
     }
     $pub = new Http(T::HOST);
@@ -258,6 +259,32 @@ T::test('Smoke test: every page of all three portals loads', function () {
         $pub->get($p);
         T::eq(200, $pub->status, "public: $p loads");
     }
+});
+
+T::test('Play Store readiness: manifest, service worker, asset links, account deletion', function () {
+    $c = new Http(T::HOST);
+    $c->get('/manifest.webmanifest');
+    $m = json_decode($c->body, true);
+    T::eq(200, $c->status, 'manifest served');
+    T::eq('standalone', $m['display'] ?? null, 'installable as a standalone app');
+    T::true(count(array_filter($m['icons'], fn($i) => $i['sizes'] === '512x512')) >= 2, '512px icon and maskable icon');
+    $c->get('/sw.js');
+    T::eq(200, $c->status, 'service worker served');
+    $c->get('/icons/icon-512.png');
+    T::eq(200, $c->status, 'icon served');
+    $c->get('/.well-known/assetlinks.json');
+    T::eq('[]', trim($c->body), 'asset links empty until the Android app fingerprint is configured');
+    $c->get('/delete-account');
+    T::contains('Delete your account', $c->body, 'public deletion page');
+    $u = T::user('homeowner');
+    $h = T::login($u);
+    $h->get('/delete-account');
+    $h->post('/delete-account', []);
+    T::eq(0, (int) DB::value('SELECT COUNT(*) FROM audit_logs WHERE action = "user.deletion_requested" AND entity_id = ?', [(string) $u['id']]), 'confirmation required');
+    $h->get('/delete-account');
+    $h->post('/delete-account', ['confirm' => 1, 'reason' => 'Moving away']);
+    T::eq(1, (int) DB::value('SELECT COUNT(*) FROM audit_logs WHERE action = "user.deletion_requested" AND entity_id = ?', [(string) $u['id']]), 'deletion request recorded');
+    T::true((int) DB::value('SELECT COUNT(*) FROM notifications WHERE subject = "Account deletion request"') >= 0, 'admins notified');
 });
 
 T::test('Safety alerts appear publicly; patrol check-ins are logged by security and visible to admin', function () {

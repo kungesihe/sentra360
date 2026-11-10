@@ -50,7 +50,8 @@
             <li><?= e(str_replace('_', ' & ', $c['consent_type'])) ?> — <?= $c['granted'] ? 'given' : 'withdrawn' ?> on <?= e(date('j M Y', strtotime($c['created_at']))) ?> (version <?= e($c['document_version']) ?>)</li>
           <?php endforeach; ?>
         </ul>
-        <p class="small text-body-secondary mb-0">To request a copy of your information, a correction or deletion, contact <?= e(tenant()['display_name']) ?><?= tenant()['public_email'] ? ' at ' . e(tenant()['public_email']) : '' ?>. See the <a href="/privacy">privacy policy</a>.</p>
+        <p class="small mb-2"><a href="/delete-account" class="text-danger"><i class="bi bi-trash"></i> Delete my account</a></p>
+        <p class="small text-body-secondary mb-0">To request a copy of your information or a correction, contact <?= e(tenant()['display_name']) ?><?= tenant()['public_email'] ? ' at ' . e(tenant()['public_email']) : '' ?>. See the <a href="/privacy">privacy policy</a>.</p>
       </div>
     </div>
   </div>

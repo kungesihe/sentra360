@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>You're offline</title>
+<style>
+  body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: #F5F7FB; color: #0F172A; }
+  main { max-width: 440px; margin: 12vh auto; padding: 0 16px; }
+  .card { background: #fff; border: 1px solid #E2E8F0; border-radius: 16px; padding: 24px; }
+  h1 { font-size: 1.4rem; margin: 0 0 8px; }
+  .warn { background: #FEF2F2; border: 1px solid #FECACA; color: #991B1B; border-radius: 12px; padding: 12px 14px; margin: 16px 0; }
+  a.call { display: block; text-align: center; background: #DC2626; color: #fff; text-decoration: none; font-weight: 700; padding: 14px; border-radius: 12px; margin-top: 10px; font-size: 1.1rem; }
+  a.call.alt { background: #0F172A; }
+  button { margin-top: 16px; width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #CBD5E1; background: #fff; font-size: 1rem; }
+</style>
+</head>
+<body>
+<main>
+  <div class="card">
+    <h1>You're offline</h1>
+    <p>This app needs an internet connection.</p>
+    <div class="warn"><strong>Panic alerts and incident reports cannot be sent while you are offline.</strong> If you need help now, phone for it:</div>
+    <a class="call" href="tel:10111">Call SAPS · 10111</a>
+    <a class="call alt" href="tel:10177">Ambulance / fire · 10177</a>
+    <button type="button" onclick="location.reload()">Try again</button>
+  </div>
+</main>
+</body>
+</html>

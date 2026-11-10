@@ -128,6 +128,30 @@ final class AccountController extends Controller
         redirect('/account/profile');
     }
 
+    /** Public page explaining account deletion (link required by Google Play). */
+    public function deletionInfo(): void
+    {
+        $this->view('tenant/account/deletion', ['title' => 'Delete your account', 'user' => Auth::user()], 'tenant');
+    }
+
+    /** Signed-in homeowner asks for their account and data to be deleted. */
+    public function deletionRequest(): void
+    {
+        $u = Auth::user();
+        if (!$u || $u['portal'] !== 'homeowner') {
+            redirect('/login');
+        }
+        if (empty($_POST['confirm'])) {
+            $this->backWithErrors('/delete-account', ['confirm' => 'Tick the box to confirm you want your account deleted.']);
+        }
+        \App\Core\RateLimiter::guard('delete-req:' . $u['id'], 3, 86400);
+        $reason = mb_substr(trim((string) ($_POST['reason'] ?? '')), 0, 500);
+        Audit::log('user.deletion_requested', 'user', $u['id'], ['reason' => $reason]);
+        \App\Services\Ops::notifyStaff('admin', 'Account deletion request', "{$u['first_name']} {$u['surname']} asked for their account and personal data to be deleted." . ($reason ? " Reason: $reason" : ''), "/admin/homeowners/{$u['id']}");
+        flash('success', 'Your request has been sent. The company will delete your account and personal information within 30 days, except records the law requires them to keep, and will let you know.');
+        redirect('/delete-account');
+    }
+
     public function revokeSessions(): void
     {
         $u = Auth::user();

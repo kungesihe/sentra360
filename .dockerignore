@@ -10,3 +10,8 @@ public/uploads/*
 storage/logs/*
 tests
 docker/mariadb
+
+tools
+docs/screenshots
+docs/play-store
+docs/*.pptx

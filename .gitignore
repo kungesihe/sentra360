@@ -11,3 +11,7 @@ storage/logs/*
 
 # Local tooling
 .claude/
+
+tools/node_modules/
+tools/package-lock.json
+tools/ids.json
